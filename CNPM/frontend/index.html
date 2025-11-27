@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tìm Gia Sư</title>
+    
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        /*
+        ========================================
+        I. THIẾT LẬP BIẾN SỐ VÀ RESET (Đã thêm nhiều màu)
+        ========================================
+        */
+        :root {
+            --primary-color: #007bff;
+            --primary-dark: #0056b3;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            
+            --background-light: #fdfdfd;
+            --surface-color: #ffffff;
+            --text-color: #212529;
+            --text-light: #6c757d;
+            --border-color: #e9ecef;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /*
+        ========================================
+        II. HEADER VÀ THANH ĐIỀU HƯỚNG
+        ========================================
+        */
+        header {
+            background-color: var(--dark-color); /* <-- NỀN TỐI */
+            box-shadow: var(--shadow-md);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--surface-color); /* <-- Chữ trắng */
+            text-decoration: none;
+            transition: opacity 0.3s ease;
+        }
+        .logo:hover { opacity: 0.8; }
+        .nav-links { list-style: none; display: flex; align-items: center; }
+        .nav-links li { margin-left: 30px; }
+        .nav-links a {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.7); /* <-- Chữ xám nhạt */
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            padding-bottom: 5px;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--surface-color); /* <-- Chữ trắng */
+            border-bottom-color: var(--primary-color);
+        }
+        /* Nút Đăng Xuất (Ghost button) */
+        .nav-links a.btn-logout {
+            background: transparent;
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+        }
+        .nav-links a.btn-logout:hover {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        /* Nút Đăng Ký (Filled button) */
+        .nav-links a.btn-register {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            border-bottom: none;
+        }
+        .nav-links a.btn-register:hover {
+            background-color: var(--primary-dark);
+            color: white;
+        }
+
+
+        /*
+        ========================================
+        III. CÁC "VIEW" (TRANG) CHÍNH
+        ========================================
+        */
+        main { flex-grow: 1; padding: 40px 0; }
+        .view {
+            display: none;
+            animation: fadeIn 0.6s ease;
+        }
+        .view.active { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /*
+        ========================================
+        IV. CÁC THÀNH PHẦN (BUTTON, FORM, CARD)
+        ========================================
+        */
+
+        /* --- Nút bấm (Buttons) --- */
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .btn-secondary { background-color: var(--secondary-color); }
+        .btn-secondary:hover { background-color: #5a6268; }
+        .btn-success { background-color: var(--success-color); }
+        .btn-success:hover { background-color: #218838; }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-danger:hover { background-color: #c82333; }
+        .btn-warning { background-color: var(--warning-color); color: #212529; }
+        .btn-warning:hover { background-color: #e0a800; }
+        .btn-info { background-color: var(--info-color); }
+        .btn-info:hover { background-color: #138496; }
+        .btn-full { width: 100%; }
+        .btn-sm { font-size: 0.8rem; padding: 5px 10px; }
+
+        /* --- Form (Chuyên nghiệp hơn) --- */
+        .form-container {
+            max-width: 550px;
+            margin: 20px auto;
+            background-color: var(--surface-color);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+        }
+        .form-container h2 { text-align: center; margin-bottom: 25px; color: var(--primary-color); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-family: var(--font-family);
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+        }
+        .form-group.tutor-only { display: none; }
+        body.role-giasu .form-group.tutor-only { display: block; }
+        
+        /* (MỚI) Form 3-cột cho Lịch Rảnh */
+        .form-grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        .form-grid-3 .btn {
+            align-self: end; /* Căn nút thẳng hàng với input */
+        }
+
+
+        /* --- Thẻ (Card) (ĐÃ VIẾT LẠI) --- */
+        .card {
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        .card-image {
+            height: 220px;
+            background-color: var(--border-color);
+            background-size: cover;
+            background-position: center;
+        }
+        .card-body { padding: 25px; flex-grow: 1; }
+        .card-body h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        .card-body p {
+            margin-bottom: 15px;
+            color: var(--text-light);
+        }
+        .card-footer {
+            padding: 20px 25px;
+            background-color: var(--light-color);
+            border-top: 1px solid var(--border-color);
+        }
+        
+        /* --- Lưới (Grid) --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        /* --- Trang chủ Khách (CÓ ẢNH NỀN) --- */
+        #view-guest-home {
+            position: relative;
+            padding: 60px 0;
+            background-image: url('nen_trang_chu.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 86, 179, 0.7);
+            z-index: 1;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+        .hero-content h2 {
+            color: white;
+            font-size: 2rem;
+        }
+        /* Dùng style của .card cho thông báo */
+        .hero-content .announcement-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 0.2);
+        }
+        .hero-content .announcement-card h3 { color: var(--warning-color); }
+        .hero-content .announcement-card p,
+        .hero-content .announcement-card span { color: var(--light-color); }
+        
+        /* --- Lịch của tôi (Nhiều màu theo trạng thái) --- */
+        .schedule-item {
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        .schedule-item-info h4 { font-weight: 500; }
+        .schedule-item-info p { color: var(--text-light); font-size: 0.9rem; }
+        .schedule-item-actions { display: flex; flex-direction: column; gap: 8px; }
+        
+        .schedule-item[data-status="cho_xac_nhan"] { background: #fff; border-left: 5px solid var(--secondary-color); }
+        .schedule-item[data-status="da_xac_nhan"] { background: #e6f7ff; border-left: 5px solid var(--primary-color); }
+        .schedule-item[data-status="hoan_thanh"] { background: #f6fffb; border-left: 5px solid var(--success-color); }
+        .schedule-item[data-status="da_huy"] { background: #fff5f5; border-left: 5px solid var(--danger-color); opacity: 0.8; }
+        
+        /* --- Dashboard Gia Sư --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .dashboard-card {
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            padding: 25px;
+        }
+        .dashboard-card h3 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .request-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .request-item:last-child { border-bottom: none; }
+        .request-item-info p { font-size: 0.9rem; color: var(--text-light); }
+        .request-item-actions .btn { margin-left: 5px; }
+        
+        .dashboard-card .schedule-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .dashboard-card .schedule-item-actions {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+        }
+        
+        /* --- (MỚI) Thẻ Danh Sách Gia Sư --- */
+        .tutor-list-card .schedule-list {
+            list-style: none;
+            padding-left: 10px;
+            border-left: 3px solid var(--border-color);
+        }
+        .tutor-list-card .schedule-list li {
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        /* --- Chi tiết Gia Sư --- */
+        .tutor-detail-header {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            background: var(--surface-color);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+        }
+        .tutor-detail-avatar {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background-color: #eee;
+            flex-shrink: 0;
+        }
+        .tutor-detail-info h1 { color: var(--primary-color); margin-bottom: 10px; }
+        .tutor-detail-section {
+            background: var(--surface-color);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 25px;
+        }
+        .tutor-detail-section h3 {
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 5px;
+            display: inline-block;
+        }
+
+
+        /*
+        ========================================
+        V. MODAL (CỬA SỔ BẬT LÊN)
+        ========================================
+        */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background-color: var(--surface-color);
+            padding: 0;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            width: 90%;
+            max-width: 500px;
+            animation: modalFadeIn 0.4s ease;
+            overflow: hidden;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 3px solid var(--primary-color);
+        }
+        .modal-header h2 { margin: 0; }
+        .modal-close-btn {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-light);
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+        .modal-body { padding: 30px; }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /*
+        ========================================
+        VI. TIỆN ÍCH (ẨN/HIỆN THEO VAI TRÒ) (ĐÃ SỬA)
+        ========================================
+        */
+        .logged-in-item, .logged-out-item,
+        .role-hocvien-item, .role-giasu-item {
+            display: none; /* Ẩn tất cả mặc định */
+        }
+        
+        /* Khi chưa đăng nhập, chỉ hiện 'logged-out-item' */
+        body.logged-out .logged-out-item { display: block; }
+        body.logged-out .nav-links .logged-out-item { display: inline-block; }
+        
+        /* Khi đã đăng nhập, chỉ hiện 'logged-in-item' (chung) */
+        body.logged-in .logged-in-item { display: block; }
+        body.logged-in .nav-links .logged-in-item { display: inline-block; }
+
+        /* VÀ hiện các item của vai trò tương ứng */
+        body.logged-in.role-hocvien .role-hocvien-item { display: block; }
+        body.logged-in.role-hocvien .nav-links .role-hocvien-item { display: inline-block; }
+        
+        body.logged-in.role-giasu .role-giasu-item { display: block; }
+        body.logged-in.role-giasu .nav-links .role-giasu-item { display: inline-block; }
+
+        /*
+        ========================================
+        VII. SPINNER VÀ RESPONSIVE
+        ========================================
+        */
+        #loading-spinner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            header .container { flex-direction: column; gap: 10px; }
+            .nav-links { flex-wrap: wrap; justify-content: center; }
+            .grid { grid-template-columns: 1fr; }
+            .tutor-detail-header { flex-direction: column; align-items: center; }
+            .schedule-item { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .schedule-item-actions { width: 100%; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body class="logged-out"> <header>
+        <div class="container">
+            <a href="#" class="logo" data-target="view-guest-home">Trang Web Tìm Gia Sư </a>
+            <ul class="nav-links">
+                <li><a data-target="view-guest-home" class="nav-link active">Trang Chủ</a></li>
+                
+                <li class="role-hocvien-item"><a data-target="view-all-tutors-list" class="nav-link">Danh Sách Gia Sư</a></li> <li class="role-hocvien-item"><a data-target="view-my-schedule" class="nav-link">Lịch Của Tôi</a></li>
+                
+                <li class="role-giasu-item"><a data-target="view-tutor-dashboard" class="nav-link">Dashboard</a></li>
+                <li class="role-giasu-item"><a data-target="view-tutor-dashboard" class="nav-link">Lịch Dạy</a></li>
+                
+                <li class="logged-in-item"><a data-target="view-my-profile" class="nav-link">Hồ Sơ</a></li>
+                <li class="logged-in-item"><a id="logout-button" href="#" class="btn-logout">Đăng Xuất</a></li>
+                
+                <li class="logged-out-item"><a data-target="view-login" class="nav-link">Đăng Nhập</a></li>
+                <li class="logged-out-item"><a data-target="view-register" class="btn btn-register">Đăng Ký</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <main>
+
+        <section id="view-guest-home" class="view active hero-section">
+            <div class="hero-overlay"></div>
+            <div class="hero-content container">
+                <h2 style="text-align: center; margin-bottom: 30px;">Thông Báo Mới Nhất</h2>
+                <div class="card announcement-card">
+                    <div class="card-body">
+                        <h3>Chào đón thành viên thứ 10,000!</h3>
+                        <p>Hệ thống vui mừng thông báo đã đạt mốc 10,000 thành viên. Cảm ơn sự tin tưởng của các bạn!</p>
+                        <span>Ngày 08/11/2025</span>
+                    </div>
+                </div>
+                <div class="card announcement-card">
+                    <div class="card-body">
+                        <h3>Cập nhật tính năng thanh toán</h3>
+                        <p>Học viên giờ đây có thể thanh toán trực tiếp cho gia sư qua hệ thống sau khi buổi học hoàn thành.</p>
+                        <span>Ngày 05/11/2025</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-all-tutors-list" class="view">
+            <div class="container">
+                <h2 style="margin-bottom: 20px;">Danh Sách Gia Sư (Tất cả)</h2>
+                <div id="all-tutors-container" class="grid">
+                    </div>
+            </div>
+        </section>
+        
+        <section id="view-tutor-dashboard" class="view">
+            <div class="container">
+                <h2 style="margin-bottom: 20px;">Dashboard Gia Sư</h2>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>Yêu Cầu Đặt Lịch Mới</h3>
+                        <div id="tutor-requests-container">
+                            <p>Đang tải...</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>Lịch Dạy Sắp Tới</h3>
+                        <div id="tutor-upcoming-container">
+                            <p>Không có lịch dạy nào sắp tới.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-login" class="view">
+            <div class="form-container">
+                <form id="login-form">
+                    <h2>Đăng Nhập</h2>
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Mật khẩu</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-full">Đăng Nhập</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="view-register" class="view">
+            <div class="form-container">
+                <form id="register-form">
+                    <h2>Đăng Ký Tài Khoản</h2>
+                    <div class="form-group">
+                        <label for="reg-hoten">Họ và Tên</label>
+                        <input type="text" id="reg-hoten" name="hoTen" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-sdt">Số Điện Thoại</label>
+                        <input type="tel" id="reg-sdt" name="soDienThoai" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-email">Email</label>
+                        <input type="email" id="reg-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password">Mật khẩu</label>
+                        <input type="password" id="reg-password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-role">Bạn là?</label>
+                        <select id="reg-role" name="maPhanQuyen" required>
+                            <option value="">--- Chọn vai trò ---</option>
+                            <option value="3">Học Viên (cần tìm gia sư)</option>
+                            <option value="2">Gia Sư (muốn đi dạy)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-full">Đăng Ký</button>
+                </form>
+            </div>
+        </section>
+        
+        <section id="view-tutor-detail" class="view">
+            <div class="container">
+                <a href="#" data-target="view-all-tutors-list" class="btn btn-secondary" style="margin-bottom: 20px;">&larr; Quay Lại Danh Sách</a>
+                <div id="tutor-details-container"></div>
+            </div>
+        </section>
+        
+        <section id="view-my-schedule" class="view">
+            <div class="container">
+                <h2 style="margin-bottom: 20px;">Lịch Của Tôi</h2>
+                <div id="my-schedule-container"></div>
+            </div>
+        </section>
+        
+        <section id="view-my-profile" class="view">
+            <div class="form-container">
+                <form id="form-update-profile">
+                    <h2>Hồ Sơ Của Tôi</h2>
+                    <div class="form-group">
+                        <label for="profile-hoten">Họ và Tên</label>
+                        <input type="text" id="profile-hoten" name="hoTen" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-sdt">Số Điện Thoại</label>
+                        <input type="tel" id="profile-sdt" name="soDienThoai" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-diachi">Địa chỉ</label>
+                        <input type="text" id="profile-diachi" name="diaChi">
+                    </div>
+                    <div class="form-group tutor-only">
+                        <label for="profile-gioithieu">Giới thiệu bản thân</label>
+                        <textarea id="profile-gioithieu" name="gioiThieu" rows="4"></textarea>
+                    </div>
+                    <div class="form-group tutor-only">
+                        <label for="profile-trinhdo">Trình độ</label>
+                        <input type="text" id="profile-trinhdo" name="trinhDo">
+                    </div>
+                    <button type="submit" class="btn btn-full btn-success">Cập Nhật Hồ Sơ</button>
+                </form>
+            </div>
+
+            <div class="form-container tutor-only" style="margin-top: 30px;">
+                <form id="form-add-subject">
+                    <h2>Thêm Môn Dạy Mới</h2>
+                    <div class="form-group">
+                        <label for="add-monhoc">Chọn Môn Học</label>
+                        <select id="add-monhoc" name="maMonHoc"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-caphoc">Chọn Cấp Học</label>
+                        <select id="add-caphoc" name="maCapHoc"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-hocphi">Học Phí (VND / buổi)</label>
+                        <input type="number" id="add-hocphi" name="hocPhi" required>
+                    </div>
+                    <button type="submit" class="btn btn-full btn-info">Thêm Môn Dạy</button>
+                </form>
+            </div>
+            
+            <div class="form-container tutor-only" style="margin-top: 30px;">
+                <form id="form-add-schedule">
+                    <h2>Thêm Lịch Rảnh Mới</h2>
+                    <div class="form-group">
+                        <label for="add-ngay">Chọn Ngày Trong Tuần</label>
+                        <select id="add-ngay" name="ngayTrongTuan" required>
+                            <option value="1">Thứ Hai</option>
+                            <option value="2">Thứ Ba</option>
+                            <option value="3">Thứ Tư</option>
+                            <option value="4">Thứ Năm</option>
+                            <option value="5">Thứ Sáu</option>
+                            <option value="6">Thứ Bảy</option>
+                            <option value="0">Chủ Nhật</option>
+                        </select>
+                    </div>
+                    <div class="form-grid-3">
+                        <div class="form-group">
+                            <label for="add-giobatdau">Từ (Giờ)</label>
+                            <input type="time" id="add-giobatdau" name="gioBatDau" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="add-gioketthuc">Đến (Giờ)</label>
+                            <input type="time" id="add-gioketthuc" name="gioKetThuc" required>
+                        </div>
+                        <button type="submit" class="btn btn-info">Thêm Lịch</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+        
+    </main>
+
+    <div id="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+    
+    <div id="modal-book" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Đặt Lịch Học</h2>
+                <button class="modal-close-btn" data-dismiss="modal-book">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-book">
+                    <input type="hidden" id="book-maGiaSu">
+                    <div class="form-group">
+                        <label for="book-monhoc">Môn học</label>
+                        <select id="book-monhoc" name="maMonHoc" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="book-ngayhoc">Ngày học</label>
+                        <input type="date" id="book-ngayhoc" name="ngayHoc" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="book-giobatdau">Giờ bắt đầu</label>
+                        <input type="time" id="book-giobatdau" name="gioBatDau" required>
+                    </div>
+                    <button type="submit" class="btn btn-full btn-success">Gửi Yêu Cầu</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal-review" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Đánh Giá Buổi Học</h2>
+                <button class="modal-close-btn" data-dismiss="modal-review">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-review">
+                    <input type="hidden" id="review-maLopHoc">
+                    <div class="form-group">
+                        <label for="review-diem">Điểm (1-5 sao)</label>
+                        <select id="review-diem" name="diem" required>
+                            <option value="5">⭐⭐⭐⭐⭐ 5 sao (Rất Tốt)</option>
+                            <option value="4">⭐⭐⭐⭐ 4 sao (Tốt)</option>
+                            <option value="3">⭐⭐⭐ 3 sao (Khá)</option>
+                            <option value="2">⭐⭐ 2 sao (Trung Bình)</option>
+                            <option value="1">⭐ 1 sao (Tệ)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="review-nhanxet">Nhận xét</label>
+                        <textarea id="review-nhanxet" name="nhanXet" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-full btn-warning">Gửi Đánh Giá</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal-pay" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Thanh Toán Học Phí</h2>
+                <button class="modal-close-btn" data-dismiss="modal-pay">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-pay">
+                    <input type="hidden" id="pay-maLopHoc">
+                    <div class="form-group">
+                        <label for="pay-sotien">Số Tiền</label>
+                        <input type="number" id="pay-sotien" name="soTien" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pay-phuongthuc">Phương thức</label>
+                        <select id="pay-phuongthuc" name="phuongThuc" required>
+                            <option value="ChuyenKhoan">Chuyển khoản</option>
+                            <option value="TienMat">Tiền mặt</option>
+                            <option value="ViDienTu">Ví điện tử</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-full btn-success">Xác Nhận Thanh Toán</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+   <script>
+        //
+        // ========================================
+        // I. KHỞI TẠO VÀ BIẾN TOÀN CỤC
+        // ========================================
+        //
+        const API_URL = '/api'; 
+        const state = {
+            currentUser: null,
+            currentUserProfile: null,
+            currentTutorSubjects: [],
+        };
+
+        // DOM Elements
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const views = document.querySelectorAll('.view');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const modals = document.querySelectorAll('.modal');
+        
+        // Bảng map Ngày (Thứ)
+        const dayMap = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+
+        //
+        // ========================================
+        // II. CÁC HÀM TIỆN ÍCH (SPINNER, VIEW, MODAL, API)
+        // ========================================
+        //
+        function showLoading() { loadingSpinner.style.display = 'flex'; }
+        function hideLoading() { loadingSpinner.style.display = 'none'; }
+
+        function showView(viewId) {
+            views.forEach(view => view.classList.remove('active'));
+            document.getElementById(viewId)?.classList.add('active');
+            navLinks.forEach(link => {
+                const target = link.dataset.target;
+                let isActive = (target === viewId);
+                
+                // Logic highlight Trang Chủ
+                if ((viewId === 'view-all-tutors-list' || viewId === 'view-guest-home' || viewId === 'view-tutor-dashboard') && target === 'view-guest-home') {
+                    isActive = true; 
+                }
+                
+                // Logic highlight Lịch (Gia Sư)
+                if (state.currentUser?.MaPhanQuyen == 2 && (viewId === 'view-tutor-dashboard')) {
+                    if (target === 'view-tutor-dashboard') isActive = true;
+                }
+                // Logic highlight Lịch (Học Viên)
+                else if (state.currentUser?.MaPhanQuyen == 3 && viewId === 'view-my-schedule') {
+                     if (target === 'view-my-schedule') isActive = true;
+                }
+                
+                link.classList.toggle('active', isActive);
+            });
+        }
+        
+        function showModal(modalId) { document.getElementById(modalId)?.classList.add('active'); }
+        function hideModal(modalId) { document.getElementById(modalId)?.classList.remove('active'); }
+
+        /**
+         * Hàm gọi API (Fetch) chung (Đã cập nhật SweetAlert2)
+         */
+        async function apiCall(endpoint, options = {}) {
+            showLoading();
+            try {
+                const response = await fetch(API_URL + endpoint, options);
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || `Lỗi ${response.status}`);
+                }
+                return data; // Chỉ trả về data khi thành công
+            } catch (error) {
+                console.error('Lỗi API:', error);
+                // Ném lỗi ra để hàm gọi xử lý và hiển thị = SweetAlert2
+                throw error; 
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function updateUIOnLoginState() {
+            if (state.currentUser) {
+                document.body.classList.remove('logged-out');
+                document.body.classList.add('logged-in');
+                // Thêm class vai trò vào body
+                if (state.currentUser.MaPhanQuyen == 2) {
+                    document.body.classList.add('role-giasu');
+                    document.body.classList.remove('role-hocvien');
+                } else if (state.currentUser.MaPhanQuyen == 3) {
+                    document.body.classList.add('role-hocvien');
+                    document.body.classList.remove('role-giasu');
+                }
+            } else {
+                document.body.classList.remove('logged-in');
+                document.body.classList.remove('role-giasu');
+                document.body.classList.remove('role-hocvien');
+                document.body.classList.add('logged-out');
+            }
+        }
+        
+        // Hàm hiển thị lỗi chung
+        function showError(error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops... Có lỗi xảy ra!',
+                text: error.message,
+            });
+        }
+
+        //
+        // ========================================
+        // III. XỬ LÝ API (HÀM LOGIC CHÍNH)
+        // ========================================
+        //
+        
+        // --- 1. XÁC THỰC (ĐĂNG KÝ, ĐĂNG NHẬP, ĐĂNG XUẤT) ---
+        async function handleRegister(formData) {
+            const data = Object.fromEntries(formData.entries());
+            try {
+                const result = await apiCall('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (result && result.success) {
+                    Swal.fire('Đăng ký thành công!', 'Bạn có thể đăng nhập ngay bây giờ.', 'success');
+                    showView('view-login');
+                }
+            } catch (error) { showError(error); }
+        }
+
+        async function handleLogin(formData) {
+            const data = Object.fromEntries(formData.entries());
+            try {
+                const result = await apiCall('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (result && result.success) {
+                    state.currentUser = result.user; // Lưu thông tin TaiKhoan
+                    
+                    // === SỬA LỖI 1: LƯU VÀO LOCALSTORAGE ===
+                    localStorage.setItem('currentUser', JSON.stringify(result.user));
+                    
+                    await handleFetchMyProfile(); // Lấy thông tin HoSo
+                    updateUIOnLoginState();
+                    
+                    // === CHUYỂN HƯỚNG THEO VAI TRÒ ===
+                    if (state.currentUser.MaPhanQuyen == 2) {
+                        // Là Gia Sư -> Mở Dashboard
+                        showView('view-tutor-dashboard');
+                        handleViewMySchedule(); // Tải dữ liệu cho Dashboard Gia Sư
+                    } else if (state.currentUser.MaPhanQuyen == 3) {
+                        // Là Học Viên -> Mở trang Danh Sách Gia Sư
+                        showView('view-all-tutors-list');
+                        handleViewAllTutors(); // Tải DS Gia Sư
+                    } else {
+                        showView('view-guest-home');
+                    }
+                }
+            } catch (error) { showError(error); }
+        }
+        
+        function handleLogout() {
+            state.currentUser = null;
+            state.currentUserProfile = null;
+            
+            // === SỬA LỖI 1: XÓA KHỎI LOCALSTORAGE ===
+            localStorage.removeItem('currentUser');
+            
+            updateUIOnLoginState();
+            showView('view-guest-home');
+        }
+        
+        // --- 2. XỬ LÝ HỒ SƠ CÁ NHÂN (MỚI) ---
+        async function handleFetchMyProfile() {
+            if (!state.currentUser) return;
+            const { MaTaiKhoan, MaPhanQuyen } = state.currentUser;
+            try {
+                const result = await apiCall(`/profile/me?maTaiKhoan=${MaTaiKhoan}&maPhanQuyen=${MaPhanQuyen}`);
+                if (result.success) {
+                    state.currentUserProfile = result.profile; // Lưu hồ sơ
+                }
+            } catch (error) {
+                showError(new Error("Không thể tải hồ sơ người dùng. Vui lòng liên hệ admin."));
+                handleLogout(); // Đăng xuất ép
+            }
+        }
+        
+        function handleShowProfileView() {
+            if (!state.currentUserProfile) {
+                showError(new Error("Không tìm thấy dữ liệu hồ sơ."));
+                return;
+            }
+            const profile = state.currentUserProfile;
+            
+            document.getElementById('profile-hoten').value = profile.HoTen || '';
+            document.getElementById('profile-sdt').value = profile.SoDienThoai || '';
+            document.getElementById('profile-diachi').value = profile.DiaChi || '';
+            
+            if (state.currentUser.MaPhanQuyen == 2) {
+                document.getElementById('profile-gioithieu').value = profile.GioiThieu || '';
+                document.getElementById('profile-trinhdo').value = profile.TrinhDo || '';
+            }
+            
+            // Tải dữ liệu cho các form thêm môn học/lịch rảnh
+            loadAddSubjectFilters(); // (chỉ chạy khi là gia sư)
+            
+            showView('view-my-profile');
+        }
+        
+        async function handleUpdateProfile(formData) {
+            const data = Object.fromEntries(formData.entries());
+            data.maTaiKhoan = state.currentUser.MaTaiKhoan;
+            data.maPhanQuyen = state.currentUser.MaPhanQuyen;
+            
+            try {
+                const result = await apiCall('/profile', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (result.success) {
+                    Swal.fire('Thành công!', 'Đã cập nhật hồ sơ của bạn.', 'success');
+                    await handleFetchMyProfile(); // Tải lại hồ sơ mới
+                }
+            } catch (error) { showError(error); }
+        }
+
+        // --- 3. TÌM KIẾM & XEM GIA SƯ (ĐÃ SỬA) ---
+        
+        // === HÀM MỚI (GỌI API TẤT CẢ GIA SƯ) ===
+        async function handleViewAllTutors() {
+            try {
+                const result = await apiCall('/all-tutors');
+                if (result && result.success) {
+                    renderAllTutorsSchedule(result.results);
+                }
+            } catch (error) {
+                showError(error);
+            }
+        }
+
+        async function handleViewDetails(tutorId) {
+            try {
+                const result = await apiCall(`/giasu/${tutorId}`);
+                if (result) {
+                    state.currentTutorSubjects = result.subjects || [];
+                    renderTutorDetails(result);
+                    showView('view-tutor-detail');
+                }
+            } catch (error) { showError(error); }
+        }
+        
+        // --- 4. QUẢN LÝ LỊCH HỌC (ĐẶT, XEM, XÁC NHẬN, HỦY, HOÀN THÀNH) ---
+        async function handleViewMySchedule() {
+            if (!state.currentUser) return;
+            const { MaTaiKhoan, MaPhanQuyen } = state.currentUser;
+            const queryString = `?maTaiKhoan=${MaTaiKhoan}&maPhanQuyen=${MaPhanQuyen}`;
+            try {
+                const result = await apiCall(`/lophoc/me${queryString}`);
+                if (result && result.success) {
+                    // Phân luồng render
+                    if (state.currentUser.MaPhanQuyen == 2) {
+                        renderTutorDashboard(result.data); // Render cho Gia Sư
+                    } else {
+                        renderMySchedule(result.data); // Render cho Học Viên
+                    }
+                }
+            } catch (error) { showError(error); }
+        }
+        
+        async function handleBookClass(formData) {
+            if (!state.currentUser) return;
+            const data = Object.fromEntries(formData.entries());
+            data.maGiaSu = document.getElementById('book-maGiaSu').value;
+            data.maTaiKhoanHocVien = state.currentUser.MaTaiKhoan;
+            
+            const selectedOption = document.getElementById('book-monhoc').options[document.getElementById('book-monhoc').selectedIndex];
+            data.maCapHoc = selectedOption.dataset.caphoc || 1;
+            
+            data.gioKetThuc = (data.gioBatDau || "12:00").split(':')[0] + ":30";
+            data.hinhThuc = 'offline';
+            
+            try {
+                const result = await apiCall('/lophoc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (result && result.success) {
+                    hideModal('modal-book');
+                    Swal.fire('Thành công!', 'Đã gửi yêu cầu đặt lịch!', 'success');
+                    showView('view-my-schedule');
+                    handleViewMySchedule();
+                }
+            } catch (error) { showError(error); }
+        }
+        
+        async function handleConfirmClass(maLopHoc) {
+            const data = { maTaiKhoanGiaSu: state.currentUser.MaTaiKhoan };
+            try {
+                const result = await apiCall(`/lophoc/${maLopHoc}/confirm`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (result && result.success) {
+                    Swal.fire('Đã xác nhận!', 'Lớp học đã được xác nhận.', 'success');
+                    handleViewMySchedule();
+                }
+            } catch (error) { showError(error); }
+        }
+        
+        async function handleCompleteClass(maLopHoc) {
+            const data = { maTaiKhoanGiaSu: state.currentUser.MaTaiKhoan };
+            try {
+                const result = await apiCall(`/lophoc/${maLopHoc}/complete`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (result && result.success) {
+                    Swal.fire('Đã hoàn thành!', 'Lớp học được đánh dấu hoàn thành.', 'success');
+                    handleViewMySchedule();
+                }
+            } catch (error) { showError(error); }
+        }
+
+        async function handleCancelClass(maLopHoc) {
+            const confirmResult = await Swal.fire({
+                title: 'Bạn có chắc chắn?',
+                text: "Bạn không thể hoàn tác hành động này!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Vâng, Hủy lớp này!',
+                cancelButtonText: 'Không'
+            });
+
+            if (confirmResult.isConfirmed) {
+                const data = { maTaiKhoanHuy: state.currentUser.MaTaiKhoan };
+                try {
+                    const apiResult = await apiCall(`/lophoc/${maLopHoc}/cancel`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (apiResult && apiResult.success) {
+                        Swal.fire('Đã hủy!', 'Lớp học đã được hủy.', 'success');
+                        handleViewMySchedule();
+                    }
+                } catch (error) { showError(error); }
+            }
+        }
+
+        // --- 5. ĐÁNH GIÁ & GIAO DỊCH (THANH TOÁN) ---
+        async function handleReviewClass(formData) {
+            const data = Object.fromEntries(formData.entries());
+            const maLopHoc = document.getElementById('review-maLopHoc').value;
+            data.maTaiKhoanHocVien = state.currentUser.MaTaiKhoan;
+            
+            try {
+                const result = await apiCall(`/lophoc/${maLopHoc}/danhgia`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (result && result.success) {
+                    hideModal('modal-review');
+                    Swal.fire('Cảm ơn bạn!', 'Gửi đánh giá thành công!', 'success');
+                    handleViewMySchedule();
+                }
+            } catch (error) { showError(error); }
+        }
+        
+        async function handlePayClass(formData) {
+            const data = Object.fromEntries(formData.entries());
+            const maLopHoc = document.getElementById('pay-maLopHoc').value;
+            data.maTaiKhoanNguoiTra = state.currentUser.MaTaiKhoan;
+            
+            try {
+                const result = await apiCall(`/lophoc/${maLopHoc}/thanhtoan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (result && result.success) {
+                    hideModal('modal-pay');
+                    Swal.fire('Thành công!', 'Xác nhận thanh toán thành công!', 'success');
+                    handleViewMySchedule();
+                }
+            } catch (error) { showError(error); }
+        }
+        
+        // --- 6. TẢI DỮ LIỆU BAN ĐẦU (ĐÃ SỬA) ---
+        
+        // (HÀM MỚI) Tải dữ liệu cho form "Thêm Môn Dạy" của gia sư
+        async function loadAddSubjectFilters() {
+            if (state.currentUser?.MaPhanQuyen != 2) return; // Chỉ chạy nếu là gia sư
+            try {
+                const [monHocRes, capHocRes] = await Promise.all([
+                    apiCall('/monhoc'),
+                    apiCall('/caphoc')
+                ]);
+                
+                const monHocSelect = document.getElementById('add-monhoc');
+                monHocSelect.innerHTML = '<option value="">Chọn môn học</option>';
+                if (monHocRes.success) {
+                    monHocRes.data.forEach(item => {
+                        monHocSelect.innerHTML += `<option value="${item.MaMonHoc}">${item.TenMonHoc}</option>`;
+                    });
+                }
+                
+                const capHocSelect = document.getElementById('add-caphoc');
+                capHocSelect.innerHTML = '<option value="">Chọn cấp học</option>';
+                if (capHocRes.success) {
+                    capHocRes.data.forEach(item => {
+                        capHocSelect.innerHTML += `<option value="${item.MaCapHoc}">${item.TenCapHoc}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error("Lỗi khi tải dữ liệu form gia sư:", error);
+            }
+        }
+        
+        // (HÀM MỚI) Thêm môn dạy
+        async function handleAddSubject(formData) {
+            const data = Object.fromEntries(formData.entries());
+            data.maTaiKhoanGiaSu = state.currentUser.MaTaiKhoan;
+            try {
+                const result = await apiCall('/profile/me/subject', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (result.success) {
+                    Swal.fire('Thành công!', 'Đã thêm môn dạy mới.', 'success');
+                    // TODO: Tải lại danh sách môn dạy đã đăng ký
+                }
+            } catch (error) { showError(error); }
+        }
+        
+        // (HÀM MỚI) Thêm lịch rảnh
+        async function handleAddSchedule(formData) {
+            const data = Object.fromEntries(formData.entries());
+            data.maTaiKhoanGiaSu = state.currentUser.MaTaiKhoan;
+            try {
+                const result = await apiCall('/profile/me/schedule', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (result.success) {
+                    Swal.fire('Thành công!', 'Đã thêm lịch rảnh mới.', 'success');
+                    // TODO: Tải lại danh sách lịch rảnh
+                }
+            } catch (error) { showError(error); }
+        }
+
+
+        //
+        // ========================================
+        // IV. RENDER HTML (HIỂN THỊ DỮ LIỆU)
+        // ========================================
+        //
+        
+        // === HÀM MỚI (RENDER TẤT CẢ GIA SƯ VÀ LỊCH) ===
+        function renderAllTutorsSchedule(tutors) {
+            const container = document.getElementById('all-tutors-container');
+            if (!tutors || tutors.length === 0) {
+                container.innerHTML = '<p>Không tìm thấy gia sư nào.</p>';
+                return;
+            }
+            
+            container.innerHTML = tutors.map(tutor => {
+                // Format lịch rảnh
+                const scheduleHtml = tutor.lichRanh.length > 0
+                    ? tutor.lichRanh.map(s => `<li>${dayMap[s.NgayTrongTuan]}: ${s.GioBatDau} - ${s.GioKetThuc}</li>`).join('')
+                    : '<li>Chưa cập nhật lịch rảnh.</li>';
+                
+                return `
+                    <div class="card tutor-list-card">
+                         <div class="card-image" style="background-image: url('https://source.unsplash.com/random/400x300?teacher,portrait&r=${tutor.MaGiaSu}')"></div>
+                        <div class="card-body">
+                            <h3>${tutor.HoTen}</h3>
+                            <p class="rating"><strong>Rating:</strong> ${parseFloat(tutor.DiemTrungBinh || 0).toFixed(1)}/5 (${tutor.SoDanhGia} đánh giá)</p>
+                            <p>${(tutor.GioiThieu || 'Chưa có giới thiệu.').substring(0, 100)}...</p>
+                            <h4 style="margin-top: 10px; font-size: 0.9rem; color: var(--text-light);">Lịch rảnh đã đăng ký:</h4>
+                            <ul class="schedule-list">
+                                ${scheduleHtml}
+                            </ul>
+                        </div>
+                        <div class="card-footer">
+                            <a href="#" class="btn btn-full" data-action="view-details" data-id="${tutor.MaGiaSu}">Xem Chi Tiết & Đặt Lịch</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTutorDetails(data) {
+            const container = document.getElementById('tutor-details-container');
+            const { profile, subjects, reviews } = data;
+            
+            const subjectsHtml = subjects.length > 0
+                ? subjects.map(s => `<li>${s.TenMonHoc} (${s.TenCapHoc}) - ${s.HocPhi}đ/buổi</li>`).join('')
+                : '<p>Gia sư chưa đăng ký môn dạy.</p>';
+            
+            const reviewsHtml = reviews.length > 0
+                ? reviews.map(r => `<div class="card-body" style="border-bottom: 1px solid #eee;"><strong>${r.TenHocVien}</strong> (${r.Diem} sao): "${r.NhanXet}"</div>`).join('')
+                : '<p>Chưa có đánh giá nào.</p>';
+            
+            // Load môn học của gia sư này vào modal đặt lịch
+            const bookMonhocSelect = document.getElementById('book-monhoc');
+            bookMonhocSelect.innerHTML = subjects.map(s => `<option value="${s.MaMonHoc}" data-caphoc="${s.MaCapHoc}">${s.TenMonHoc} (${s.TenCapHoc})</option>`).join('');
+
+            container.innerHTML = `
+                <div class="tutor-detail-header">
+                    <div class="tutor-detail-avatar"></div>
+                    <div class="tutor-detail-info">
+                        <h1>${profile.HoTen}</h1>
+                        <p><strong>Trình độ:</strong> ${profile.TrinhDo || 'Chưa cập nhật'}</p>
+                        <p><strong>Địa chỉ:</strong> ${profile.DiaChi || 'Chưa cập nhật'}</p>
+                        <p><strong>Rating:</strong> ${parseFloat(profile.DiemTrungBinh || 0).toFixed(1)}/5 (${profile.SoDanhGia} đánh giá)</p>
+                        <button class="btn btn-success" data-action="open-modal" data-modal="modal-book" data-id="${profile.MaGiaSu}">
+                            Đặt Lịch Học
+                        </button>
+                    </div>
+                </div>
+                <div class="tutor-detail-section">
+                    <h3>Giới Thiệu</h3>
+                    <p>${profile.GioiThieu || 'Chưa có giới thiệu.'}</p>
+                </div>
+                <div class="tutor-detail-section">
+                    <h3>Các Môn Dạy</h3>
+                    <ul>${subjectsHtml}</ul>
+                </div>
+                <div class="tutor-detail-section">
+                    <h3>Đánh Giá</h3>
+                    ${reviewsHtml}
+                </div>
+            `;
+        }
+        
+        // Render cho trang LỊCH CỦA TÔI (Học viên)
+        function renderMySchedule(classes) {
+            const container = document.getElementById('my-schedule-container');
+            if (!classes || classes.length === 0) {
+                container.innerHTML = '<p>Bạn chưa có lịch học/dạy nào.</p>';
+                return;
+            }
+            
+            container.innerHTML = classes.map(cls => {
+                let actions = '';
+                // Này là HỌC VIÊN
+                if (cls.TrangThai === 'da_xac_nhan') {
+                        actions = `<button class="btn btn-sm btn-danger" data-action="cancel-class" data-id="${cls.MaLopHoc}">❌ Hủy</button>`;
+                } else if (cls.TrangThai === 'hoan_thanh') {
+                    actions = `
+                        <button class="btn btn-sm btn-warning" data-action="open-modal" data-modal="review" data-id="${cls.MaLopHoc}">⭐ Đánh Giá</button>
+                        <button class="btn btn-sm btn-success" data-action="open-modal" data-modal="pay" data-id="${cls.MaLopHoc}" data-sotien="150000">💲 Thanh Toán</button>
+                    `;
+                }
+
+                return `
+                    <div class="schedule-item" data-status="${cls.TrangThai}">
+                        <div class="schedule-item-info">
+                            <h4>Gia sư: ${cls.TenGiaSu || 'N/A'}</h4>
+                            <p>${new Date(cls.NgayHoc).toLocaleDateString('vi-VN')} lúc ${cls.GioBatDau}</p>
+                            <p>Trạng thái: <strong>${cls.TrangThai}</strong></p>
+                        </div>
+                        <div class="schedule-item-actions">
+                            ${actions}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Render cho DASHBOARD (Gia Sư)
+        function renderTutorDashboard(classes) {
+            const requestsContainer = document.getElementById('tutor-requests-container');
+            const upcomingContainer = document.getElementById('tutor-upcoming-container');
+
+            const newRequests = classes.filter(c => c.TrangThai === 'cho_xac_nhan');
+            const upcomingClasses = classes.filter(c => c.TrangThai === 'da_xac_nhan');
+
+            if (newRequests.length > 0) {
+                requestsContainer.innerHTML = newRequests.map(cls => `
+                    <div class="request-item">
+                        <div class="request-item-info">
+                            <strong>${cls.TenHocVien || 'N/A'}</strong>
+                            <p>${new Date(cls.NgayHoc).toLocaleDateString('vi-VN')} lúc ${cls.GioBatDau}</p>
+                        </div>
+                        <div class="request-item-actions">
+                            <button class="btn btn-sm btn-success" data-action="confirm-class" data-id="${cls.MaLopHoc}">✅</button>
+                            <button class="btn btn-sm btn-danger" data-action="cancel-class" data-id="${cls.MaLopHoc}">❌</button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                requestsContainer.innerHTML = '<p>Không có yêu cầu mới nào.</p>';
+            }
+            
+            if (upcomingClasses.length > 0) {
+                upcomingContainer.innerHTML = upcomingClasses.map(cls => `
+                    <div class="schedule-item" data-status="da_xac_nhan">
+                        <div class="schedule-item-info">
+                            <h4>Học viên: ${cls.TenHocVien || 'N/A'}</h4>
+                            <p>${new Date(cls.NgayHoc).toLocaleDateString('vi-VN')} lúc ${cls.GioBatDau}</p>
+                        </div>
+                        <div class="schedule-item-actions">
+                            <button class="btn btn-sm btn-info" data-action="complete-class" data-id="${cls.MaLopHoc}">🏁 Hoàn Thành</button>
+                            <button class="btn btn-sm btn-danger" data-action="cancel-class" data-id="${cls.MaLopHoc}">❌ Hủy</button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                upcomingContainer.innerHTML = '<p>Không có lịch dạy nào sắp tới.</p>';
+            }
+        }
+
+        //
+        // ========================================
+        // V. LẮNG NGHE SỰ KIỆN (EVENT LISTENERS)
+        // ========================================
+        //
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // === KIỂM TRA ĐĂNG NHẬP (SỬA LỖI 1) ===
+            async function checkLoginStatus() {
+                const savedUser = localStorage.getItem('currentUser');
+                if (savedUser) {
+                    state.currentUser = JSON.parse(savedUser);
+                    await handleFetchMyProfile(); // Tải hồ sơ
+                    updateUIOnLoginState(); // Cập nhật UI (nút, link)
+                    
+                    // Hiển thị đúng view theo vai trò (SỬA LỖI 2)
+                    if (state.currentUser.MaPhanQuyen == 2) {
+                        showView('view-tutor-dashboard');
+                        handleViewMySchedule();
+                    } else if (state.currentUser.MaPhanQuyen == 3) {
+                        showView('view-all-tutors-list');
+                        handleViewAllTutors(); // <-- Tải danh sách gia sư
+                    } else {
+                        showView('view-guest-home');
+                    }
+                } else {
+                    // Không có ai đăng nhập, cứ ở trang khách
+                    updateUIOnLoginState(); // Cập nhật UI về trạng thái logged-out
+                }
+            }
+            
+            checkLoginStatus(); // Chạy hàm này ngay khi tải trang
+            // ===============================================
+            
+            
+            document.body.addEventListener('click', (e) => {
+                const target = e.target;
+                
+                // 1. Chuyển View (cho các link điều hướng)
+                if (target.dataset.target) {
+                    e.preventDefault();
+                    const viewId = target.dataset.target;
+                    
+                    // Nếu click vào link cần dữ liệu
+                    if (viewId === 'view-my-schedule' || (viewId === 'view-tutor-dashboard' && state.currentUser && state.currentUser.MaPhanQuyen == 2)) {
+                        handleViewMySchedule();
+                    }
+                    if (viewId === 'view-my-profile') {
+                        handleShowProfileView();
+                        return;
+                    }
+                    if (viewId === 'view-all-tutors-list') {
+                        handleViewAllTutors();
+                    }
+                    
+                    showView(viewId);
+                }
+                
+                if (target.id === 'logout-button') { e.preventDefault(); handleLogout(); }
+                if (target.dataset.action === 'view-details') { e.preventDefault(); handleViewDetails(target.dataset.id); }
+                if (target.dataset.action === 'confirm-class') { e.preventDefault(); handleConfirmClass(target.dataset.id); }
+                if (target.dataset.action === 'complete-class') { e.preventDefault(); handleCompleteClass(target.dataset.id); }
+                if (target.dataset.action === 'cancel-class') { e.preventDefault(); handleCancelClass(target.dataset.id); }
+                
+                if (target.dataset.action === 'open-modal') {
+                    e.preventDefault();
+                    if (!state.currentUser) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Vui lòng đăng nhập',
+                            text: 'Bạn cần đăng nhập để thực hiện hành động này.'
+                        });
+                        showView('view-login');
+                        return;
+                    }
+                    
+                    const modalId = target.dataset.modal;
+                    if (modalId === 'modal-book') { document.getElementById('book-maGiaSu').value = target.dataset.id; }
+                    if (modalId === 'modal-review') { document.getElementById('review-maLopHoc').value = target.dataset.id; }
+                    if (modalId === 'modal-pay') {
+                        document.getElementById('pay-maLopHoc').value = target.dataset.id;
+                        document.getElementById('pay-sotien').value = target.dataset.sotien || 100000;
+                    }
+                    showModal(modalId);
+                }
+                
+                if (target.dataset.dismiss) {
+                    e.preventDefault(); hideModal(target.dataset.dismiss);
+                }
+            });
+
+            // Lắng nghe các Form
+            document.getElementById('register-form').addEventListener('submit', (e) => { e.preventDefault(); handleRegister(new FormData(e.target)); });
+            document.getElementById('login-form').addEventListener('submit', (e) => { e.preventDefault(); handleLogin(new FormData(e.target)); });
+            
+            document.getElementById('form-update-profile').addEventListener('submit', (e) => { e.preventDefault(); handleUpdateProfile(new FormData(e.target)); });
+            document.getElementById('form-book').addEventListener('submit', (e) => { e.preventDefault(); handleBookClass(new FormData(e.target)); });
+            document.getElementById('form-review').addEventListener('submit', (e) => { e.preventDefault(); handleReviewClass(new FormData(e.target)); });
+            document.getElementById('form-pay').addEventListener('submit', (e) => { e.preventDefault(); handlePayClass(new FormData(e.target)); });
+            
+            // === LẮNG NGHE CÁC FORM MỚI CỦA GIA SƯ ===
+            document.getElementById('form-add-subject').addEventListener('submit', (e) => { e.preventDefault(); handleAddSubject(new FormData(e.target)); });
+            document.getElementById('form-add-schedule').addEventListener('submit', (e) => { e.preventDefault(); handleAddSchedule(new FormData(e.target)); });
+
+        });
+    </script>
+</body>
+</html>
+</body>
+</html>

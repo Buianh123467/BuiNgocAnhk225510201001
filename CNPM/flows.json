@@ -1,0 +1,1800 @@
+[
+    {
+        "id": "b78b6711.231928",
+        "type": "tab",
+        "label": "API - Cập Nhật Hồ Sơ (Không Bảo Mật)",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "8597ba414bc07d7c",
+        "type": "MySQLdatabase",
+        "name": "",
+        "host": "mariadb",
+        "port": "3306",
+        "db": "timgiasu_db",
+        "tz": "",
+        "charset": "UTF8"
+    },
+    {
+        "id": "c161f308.2b291",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "PUT /api/profile",
+        "url": "/api/profile",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 220,
+        "wires": [
+            [
+                "ae7f42d2.00078"
+            ]
+        ]
+    },
+    {
+        "id": "a0b4d4b1.9f6048",
+        "type": "http response",
+        "z": "b78b6711.231928",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 1050,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "ae7f42d2.00078",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "1. Build SQL UPDATE",
+        "func": "// KHÔNG CÒN BẢO MẬT\n// Phải tin tưởng `maTaiKhoan` và `maPhanQuyen` do frontend gửi lên\n\nconst { maTaiKhoan, maPhanQuyen, hoTen, soDienThoai, diaChi, gioiThieu, trinhDo } = msg.payload;\n\nif (!maTaiKhoan || !maPhanQuyen) {\n    msg.statusCode = 400;\n    msg.payload = { \"success\": false, \"message\": \"Thiếu maTaiKhoan hoặc maPhanQuyen\" };\n    return msg;\n}\n\nlet tableName = \"\";\n\nif (maPhanQuyen == 2) { // Gia Sư\n    tableName = \"HoSoGiaSu\";\n} else if (maPhanQuyen == 3) { // Học Viên\n    tableName = \"HoSoHocVien\";\n} else {\n    msg.statusCode = 403;\n    msg.payload = { \"success\": false, \"message\": \"Phân quyền không hợp lệ\" };\n    return msg;\n}\n\n// Chỉ cập nhật các trường của Gia Sư\nif (maPhanQuyen == 2) {\n    msg.topic = `UPDATE ${tableName} SET HoTen = ?, SoDienThoai = ?, DiaChi = ?, GioiThieu = ?, TrinhDo = ? WHERE MaTaiKhoan = ?`;\n    msg.payload = [hoTen, soDienThoai, diaChi, gioiThieu, trinhDo, maTaiKhoan];\n} else {\n    // Chỉ cập nhật các trường của Học Viên\n    msg.topic = `UPDATE ${tableName} SET HoTen = ?, SoDienThoai = ?, DiaChi = ? WHERE MaTaiKhoan = ?`;\n    msg.payload = [hoTen, soDienThoai, diaChi, maTaiKhoan];\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 220,
+        "wires": [
+            [
+                "c0b2d6a3.8687a8"
+            ]
+        ]
+    },
+    {
+        "id": "c0b2d6a3.8687a8",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "2. Run UPDATE",
+        "x": 610,
+        "y": 220,
+        "wires": [
+            [
+                "a1e1b1d1.2982d"
+            ]
+        ]
+    },
+    {
+        "id": "a1e1b1d1.2982d",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "3. Success Response",
+        "func": "msg.payload = { \"success\": true, \"message\": \"Cập nhật hồ sơ thành công\", \"affectedRows\": msg.payload.affectedRows };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 220,
+        "wires": [
+            [
+                "a0b4d4b1.9f6048"
+            ]
+        ]
+    },
+    {
+        "id": "b0a6843c.d8d7d8",
+        "type": "catch",
+        "z": "b78b6711.231928",
+        "name": "Catch DB Errors",
+        "scope": [
+            "c0b2d6a3.8687a8"
+        ],
+        "uncaught": false,
+        "x": 600,
+        "y": 340,
+        "wires": [
+            [
+                "f848ce1b.ab2ba"
+            ]
+        ]
+    },
+    {
+        "id": "f848ce1b.ab2ba",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Format SQL Error",
+        "func": "msg.statusCode = 500;\nmsg.payload = { \"success\": false, \"message\": msg.error.message };\ndelete msg.error;\ndelete msg.topic;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 790,
+        "y": 340,
+        "wires": [
+            [
+                "a0b4d4b1.9f6048"
+            ]
+        ]
+    },
+    {
+        "id": "b09ac8a9.e6f5c8",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "GET /api/giasu/:id",
+        "url": "/api/giasu/:id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 420,
+        "wires": [
+            [
+                "c982390a.e18988"
+            ]
+        ]
+    },
+    {
+        "id": "c982390a.e18988",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Lấy MaGiaSu & Tạo 4 truy vấn",
+        "func": "msg.maGiaSu = msg.req.params.id;\n\nif (!msg.maGiaSu) {\n    msg.statusCode = 400;\n    msg.payload = { \"success\": false, \"message\": \"Thiếu MaGiaSu\" };\n    return [null, msg]; // Lỗi\n}\n\nconst groupId = msg._msgid;\nconst totalParts = 4;\n\n// === SỬA LỖI: Dùng RED.util.cloneMessage(msg) để giữ lại msg.req/msg.res ===\n\n// Clone 1\nlet msg1 = RED.util.cloneMessage(msg); // <-- SỬA Ở ĐÂY\nmsg1.topic = \"SELECT gs.*, AVG(dg.Diem) as DiemTrungBinh, COUNT(DISTINCT dg.MaDanhGia) as SoDanhGia FROM HoSoGiaSu gs LEFT JOIN LopHoc lh ON gs.MaGiaSu = lh.MaGiaSu LEFT JOIN DanhGia dg ON lh.MaLopHoc = dg.MaLopHoc WHERE gs.MaGiaSu = ? GROUP BY gs.MaGiaSu\";\nmsg1.payload = [msg.maGiaSu];\nmsg1.parts = { id: groupId, index: 0, count: totalParts };\n\n// Clone 2\nlet msg2 = RED.util.cloneMessage(msg); // <-- SỬA Ở ĐÂY\nmsg2.topic = \"SELECT mh.TenMonHoc, ch.TenCapHoc, gsmh.HocPhi, gsmh.MaMonHoc, gsmh.MaCapHoc FROM GiaSu_MonHoc_CapHoc gsmh JOIN MonHoc mh ON gsmh.MaMonHoc = mh.MaMonHoc JOIN CapHoc ch ON gsmh.MaCapHoc = ch.MaCapHoc WHERE gsmh.MaGiaSu = ?\";\nmsg2.payload = [msg.maGiaSu];\nmsg2.parts = { id: groupId, index: 1, count: totalParts };\n\n// Clone 3\nlet msg3 = RED.util.cloneMessage(msg); // <-- SỬA Ở ĐÂY\nmsg3.topic = \"SELECT NgayTrongTuan, GioBatDau, GioKetThuc FROM GiaSu_LichRanh WHERE MaGiaSu = ?\";\nmsg3.payload = [msg.maGiaSu];\nmsg3.parts = { id: groupId, index: 2, count: totalParts };\n\n// Clone 4\nlet msg4 = RED.util.cloneMessage(msg); // <-- SỬA Ở ĐÂY\nmsg4.topic = \"SELECT dg.Diem, dg.NhanXet, dg.ThoiGian, hv.HoTen AS TenHocVien FROM DanhGia dg JOIN LopHoc lh ON dg.MaLopHoc = lh.MaLopHoc JOIN HoSoHocVien hv ON lh.MaHocVien = hv.MaHocVien WHERE lh.MaGiaSu = ? ORDER BY dg.ThoiGian DESC\";\nmsg4.payload = [msg.maGiaSu];\nmsg4.parts = { id: groupId, index: 3, count: totalParts };\n// ========================================================\n\n// Gửi 4 tin nhắn này đi\nreturn [[msg1, msg2, msg3, msg4], null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 440,
+        "wires": [
+            [
+                "f8101686.077278"
+            ],
+            [
+                "d24e9b9d.2a2788"
+            ]
+        ]
+    },
+    {
+        "id": "d24e9b9d.2a2788",
+        "type": "http response",
+        "z": "b78b6711.231928",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 760,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "f8101686.077278",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "MariaDB",
+        "x": 660,
+        "y": 440,
+        "wires": [
+            [
+                "e50e181.c3b88e8"
+            ]
+        ]
+    },
+    {
+        "id": "e50e181.c3b88e8",
+        "type": "join",
+        "z": "b78b6711.231928",
+        "name": "Chờ 4 truy vấn",
+        "mode": "auto",
+        "build": "array",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": true,
+        "accumulate": false,
+        "timeout": "5",
+        "count": "4",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 870,
+        "y": 440,
+        "wires": [
+            [
+                "a1f6a1d4.2e03d"
+            ]
+        ]
+    },
+    {
+        "id": "a1f6a1d4.2e03d",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Gộp kết quả",
+        "func": "// msg.payload là một mảng 4 phần tử (kết quả của 4 truy vấn)\nlet profile = msg.payload[0];\nlet subjects = msg.payload[1];\nlet schedule = msg.payload[2];\nlet reviews = msg.payload[3];\n\nif (!profile || profile.length === 0) {\n    msg.statusCode = 404;\n    msg.payload = { \"success\": false, \"message\": \"Không tìm thấy gia sư\" };\n    return msg;\n}\n\n// Gộp lại thành 1 JSON đẹp\nmsg.payload = {\n    profile: profile[0], // Lấy 1 object, không phải mảng\n    subjects: subjects,\n    schedule: schedule,\n    reviews: reviews\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1060,
+        "y": 440,
+        "wires": [
+            [
+                "d24e9b9d.2a2788"
+            ]
+        ]
+    },
+    {
+        "id": "a93108c4.a89e98",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "GET /api/search/giasu",
+        "url": "/api/search/giasu",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 240,
+        "y": 600,
+        "wires": [
+            [
+                "b1b86d64.3f191"
+            ]
+        ]
+    },
+    {
+        "id": "e8d6f1a8.4b238",
+        "type": "http response",
+        "z": "b78b6711.231928",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 1170,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "b1b86d64.3f191",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "1. Build Dynamic SQL",
+        "func": "// Lấy các tham số từ query URL\nconst { maMonHoc, maCapHoc, maQuanHuyen, maKhuVuc } = msg.req.query;\n\nlet params = [];\n\n// Luôn JOIN với HoSoGiaSu\nlet baseQuery = `\n    SELECT \n        gs.*,\n        AVG(dg.Diem) as DiemTrungBinh,\n        COUNT(DISTINCT dg.MaDanhGia) as SoDanhGia\n    FROM HoSoGiaSu gs\n`;\n\nlet joins = [\n    // Left Join với Đánh giá để luôn lấy được Gia Sư dù chưa có đánh giá\n    `LEFT JOIN LopHoc lh ON gs.MaGiaSu = lh.MaGiaSu`,\n    `LEFT JOIN DanhGia dg ON lh.MaLopHoc = dg.MaLopHoc`\n];\n\nlet wheres = [\n    \"gs.DaDuyet = 1\" // Chỉ tìm gia sư đã được duyệt\n];\n\n// 1. Nếu tìm theo Môn hoặc Cấp\nif (maMonHoc || maCapHoc) {\n    joins.push(`INNER JOIN GiaSu_MonHoc_CapHoc gsmh ON gs.MaGiaSu = gsmh.MaGiaSu`);\n    if (maMonHoc) {\n        wheres.push(`gsmh.MaMonHoc = ?`);\n        params.push(maMonHoc);\n    }\n    if (maCapHoc) {\n        wheres.push(`gsmh.MaCapHoc = ?`);\n        params.push(maCapHoc);\n    }\n}\n\n// 2. Nếu tìm theo Quận Huyện\nif (maQuanHuyen) {\n    joins.push(`INNER JOIN GiaSu_KhuVuc gskv ON gs.MaGiaSu = gskv.MaGiaSu`);\n    wheres.push(`gskv.MaQuanHuyen = ?`);\n    params.push(maQuanHuyen);\n}\n// 3. Nếu tìm theo Khu Vực (Tỉnh/TP)\nelse if (maKhuVuc) {\n    // Phải join cả 3 bảng mới tới được KhuVuc\n    joins.push(`INNER JOIN GiaSu_KhuVuc gskv ON gs.MaGiaSu = gskv.MaGiaSu`);\n    joins.push(`INNER JOIN QuanHuyen qh ON gskv.MaQuanHuyen = qh.MaQuanHuyen`);\n    wheres.push(`qh.MaKhuVuc = ?`);\n    params.push(maKhuVuc);\n}\n\n// Nối tất cả lại\nlet sql = baseQuery + ' ' + joins.join(' ') + ' WHERE ' + wheres.join(' AND ') + ' GROUP BY gs.MaGiaSu';\n\nmsg.topic = sql;\nmsg.payload = params;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 600,
+        "wires": [
+            [
+                "c0b297b4.d53d28"
+            ]
+        ]
+    },
+    {
+        "id": "c0b297b4.d53d28",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "2. Run Search Query",
+        "x": 740,
+        "y": 600,
+        "wires": [
+            [
+                "af22c070.36625"
+            ]
+        ]
+    },
+    {
+        "id": "af22c070.36625",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "3. Return Results",
+        "func": "msg.payload = {\n    \"success\": true,\n    \"results\": msg.payload\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 960,
+        "y": 600,
+        "wires": [
+            [
+                "e8d6f1a8.4b238"
+            ]
+        ]
+    },
+    {
+        "id": "a90f679e.8d2b98",
+        "type": "catch",
+        "z": "b78b6711.231928",
+        "name": "Catch DB Errors",
+        "scope": [
+            "c0b297b4.d53d28"
+        ],
+        "uncaught": false,
+        "x": 720,
+        "y": 680,
+        "wires": [
+            [
+                "c6776104.9aa05"
+            ]
+        ]
+    },
+    {
+        "id": "c6776104.9aa05",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Format SQL Error",
+        "func": "msg.statusCode = 500;\nmsg.payload = { \"success\": false, \"message\": msg.error.message, \"sql\": msg.topic };\ndelete msg.error;\ndelete msg.topic;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 930,
+        "y": 680,
+        "wires": [
+            [
+                "e8d6f1a8.4b238"
+            ]
+        ]
+    },
+    {
+        "id": "fb3a4cce4a7b9dcf",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "POST /api/lophoc (Đặt lịch)",
+        "url": "/api/lophoc",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1310,
+        "y": 340,
+        "wires": [
+            [
+                "2f566fdfb0bcc115"
+            ]
+        ]
+    },
+    {
+        "id": "0e4475ef735fec72",
+        "type": "http response",
+        "z": "b78b6711.231928",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 2180,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "2f566fdfb0bcc115",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Build SQL INSERT LopHoc",
+        "func": "// Lấy MaHocVien (thật) từ MaTaiKhoan (của học viên)\n// Chúng ta phải làm 1 sub-query\n\nconst { \n    maTaiKhoanHocVien, \n    maGiaSu, \n    maMonHoc, \n    maCapHoc, \n    ngayHoc, \n    gioBatDau, \n    gioKetThuc, \n    hinhThuc, \n    diaDiem, \n    ghiChuHocVien \n} = msg.payload;\n\nif (!maTaiKhoanHocVien || !maGiaSu || !maMonHoc || !maCapHoc) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Thiếu thông tin bắt buộc\" };\n    return msg;\n}\n\n// Câu SQL này sẽ tìm MaHocVien từ MaTaiKhoan\n// và INSERT vào LopHoc với TrangThai 'cho_xac_nhan'\nmsg.topic = `\n    INSERT INTO LopHoc \n    (MaHocVien, MaGiaSu, MaMonHoc, MaCapHoc, NgayHoc, GioBatDau, GioKetThuc, HinhThuc, DiaDiem, TrangThai, GhiChuHocVien)\n    VALUES\n    ((SELECT MaHocVien FROM HoSoHocVien WHERE MaTaiKhoan = ?), ?, ?, ?, ?, ?, ?, ?, ?, 'cho_xac_nhan', ?)\n`;\n\nmsg.payload = [\n    maTaiKhoanHocVien,\n    maGiaSu,\n    maMonHoc,\n    maCapHoc,\n    ngayHoc,\n    gioBatDau,\n    gioKetThuc,\n    hinhThuc,\n    diaDiem || null,\n    ghiChuHocVien || null\n];\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1610,
+        "y": 340,
+        "wires": [
+            [
+                "10abc0d29e9dfb1b"
+            ]
+        ]
+    },
+    {
+        "id": "10abc0d29e9dfb1b",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "Run DB Query",
+        "x": 1880,
+        "y": 540,
+        "wires": [
+            [
+                "2ce4c37b81a5d228"
+            ]
+        ]
+    },
+    {
+        "id": "2ce4c37b81a5d228",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Success Response",
+        "func": "msg.payload = {\n    \"success\": true,\n    \"data\": msg.payload\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2060,
+        "y": 480,
+        "wires": [
+            [
+                "0e4475ef735fec72"
+            ]
+        ]
+    },
+    {
+        "id": "f389ce957be76aec",
+        "type": "catch",
+        "z": "b78b6711.231928",
+        "name": "Catch DB Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 1820,
+        "y": 480,
+        "wires": [
+            [
+                "0fa3011613f828af"
+            ]
+        ]
+    },
+    {
+        "id": "0fa3011613f828af",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Format SQL Error",
+        "func": "msg.statusCode = 500;\nmsg.payload = { \"success\": false, \"message\": msg.error.message, \"sql\": msg.topic };\ndelete msg.error;\ndelete msg.topic;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1980,
+        "y": 480,
+        "wires": [
+            [
+                "0e4475ef735fec72"
+            ]
+        ]
+    },
+    {
+        "id": "88fcd623e4e75347",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "GET /api/lophoc/me (Xem lịch)",
+        "url": "/api/lophoc/me",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1330,
+        "y": 380,
+        "wires": [
+            [
+                "e40378d1f63111ae"
+            ]
+        ]
+    },
+    {
+        "id": "e40378d1f63111ae",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Build SQL SELECT (Lịch của tôi)",
+        "func": "// Lấy từ query URL: /api/lophoc/me?maTaiKhoan=1&maPhanQuyen=3\nconst { maTaiKhoan, maPhanQuyen } = msg.req.query;\n\nif (!maTaiKhoan || !maPhanQuyen) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Thiếu maTaiKhoan hoặc maPhanQuyen\" };\n    return msg;\n}\n\nlet query = \"\";\n\nif (maPhanQuyen == 3) { // Học viên\n    query = `\n        SELECT lh.*, gs.HoTen AS TenGiaSu\n        FROM LopHoc lh\n        JOIN HoSoHocVien hv ON lh.MaHocVien = hv.MaHocVien\n        JOIN HoSoGiaSu gs ON lh.MaGiaSu = gs.MaGiaSu\n        WHERE hv.MaTaiKhoan = ?\n        ORDER BY lh.NgayHoc DESC\n    `;\n} else if (maPhanQuyen == 2) { // Gia sư\n    query = `\n        SELECT lh.*, hv.HoTen AS TenHocVien\n        FROM LopHoc lh\n        JOIN HoSoGiaSu gs ON lh.MaGiaSu = gs.MaGiaSu\n        JOIN HoSoHocVien hv ON lh.MaHocVien = hv.MaHocVien\n        WHERE gs.MaTaiKhoan = ?\n        ORDER BY lh.NgayHoc DESC\n    `;\n} else {\n    msg.statusCode = 403;\n    msg.payload = { success: false, message: \"Phân quyền không hợp lệ\" };\n    return msg;\n}\n\nmsg.topic = query;\nmsg.payload = [maTaiKhoan];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1660,
+        "y": 380,
+        "wires": [
+            [
+                "10abc0d29e9dfb1b"
+            ]
+        ]
+    },
+    {
+        "id": "08ccbf8ab40f27e4",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "PUT /api/lophoc/:id/confirm (Xác nhận)",
+        "url": "/api/lophoc/:id/confirm",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1370,
+        "y": 440,
+        "wires": [
+            [
+                "a514bb7c25e29eb4"
+            ]
+        ]
+    },
+    {
+        "id": "a514bb7c25e29eb4",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Build SQL (Xác nhận)",
+        "func": "const maLopHoc = msg.req.params.id;\nconst { maTaiKhoanGiaSu } = msg.payload;\n\nif (!maTaiKhoanGiaSu) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Thiếu maTaiKhoanGiaSu\" };\n    return msg;\n}\n\n// Chỉ cho phép Gia Sư của lớp đó được xác nhận\nmsg.topic = `\n    UPDATE LopHoc \n    SET TrangThai = 'da_xac_nhan' \n    WHERE MaLopHoc = ? \n    AND MaGiaSu = (SELECT MaGiaSu FROM HoSoGiaSu WHERE MaTaiKhoan = ?)\n`;\nmsg.payload = [maLopHoc, maTaiKhoanGiaSu];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1650,
+        "y": 440,
+        "wires": [
+            [
+                "10abc0d29e9dfb1b"
+            ]
+        ]
+    },
+    {
+        "id": "5c96eb14004e2fe3",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "PUT /api/lophoc/:id/complete (Hoàn thành)",
+        "url": "/api/lophoc/:id/complete",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1320,
+        "y": 480,
+        "wires": [
+            [
+                "94e90767f76c5e26"
+            ]
+        ]
+    },
+    {
+        "id": "94e90767f76c5e26",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Build SQL (Hoàn thành)",
+        "func": "const maLopHoc = msg.req.params.id;\nconst { maTaiKhoanGiaSu } = msg.payload;\n\nif (!maTaiKhoanGiaSu) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Thiếu maTaiKhoanGiaSu\" };\n    return msg;\n}\n\n// Chỉ Gia Sư của lớp đó được đánh dấu hoàn thành\nmsg.topic = `\n    UPDATE LopHoc \n    SET TrangThai = 'hoan_thanh' \n    WHERE MaLopHoc = ? \n    AND MaGiaSu = (SELECT MaGiaSu FROM HoSoGiaSu WHERE MaTaiKhoan = ?)\n`;\nmsg.payload = [maLopHoc, maTaiKhoanGiaSu];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1600,
+        "y": 480,
+        "wires": [
+            [
+                "10abc0d29e9dfb1b"
+            ]
+        ]
+    },
+    {
+        "id": "2b1c52253d5fd747",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "PUT /api/lophoc/:id/cancel (Hủy)",
+        "url": "/api/lophoc/:id/cancel",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1290,
+        "y": 600,
+        "wires": [
+            [
+                "578a203e70cce13a"
+            ]
+        ]
+    },
+    {
+        "id": "578a203e70cce13a",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Build SQL (Hủy)",
+        "func": "const maLopHoc = msg.req.params.id;\n// Người hủy có thể là Học Viên hoặc Gia Sư\nconst { maTaiKhoanHuy } = msg.payload;\n\nif (!maTaiKhoanHuy) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Thiếu maTaiKhoanHuy\" };\n    return msg;\n}\n\n// Câu lệnh này cho phép Học Viên hoặc Gia Sư của lớp đó hủy\nmsg.topic = `\n    UPDATE LopHoc \n    SET TrangThai = 'da_huy' \n    WHERE MaLopHoc = ? \n    AND (\n        MaGiaSu = (SELECT MaGiaSu FROM HoSoGiaSu WHERE MaTaiKhoan = ?) \n        OR \n        MaHocVien = (SELECT MaHocVien FROM HoSoHocVien WHERE MaTaiKhoan = ?)\n    )\n`;\nmsg.payload = [maLopHoc, maTaiKhoanHuy, maTaiKhoanHuy];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1560,
+        "y": 600,
+        "wires": [
+            [
+                "10abc0d29e9dfb1b"
+            ]
+        ]
+    },
+    {
+        "id": "l2m3n4o5.p6q7r8",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "GET /api/profile/me",
+        "url": "/api/profile/me",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 310,
+        "y": 780,
+        "wires": [
+            [
+                "m3n4o5p6.q7r8s9"
+            ]
+        ]
+    },
+    {
+        "id": "n4o5p6q7.r8s9t0",
+        "type": "http response",
+        "z": "b78b6711.231928",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 1020,
+        "y": 900,
+        "wires": []
+    },
+    {
+        "id": "m3n4o5p6.q7r8s9",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Build SQL (Lấy Hồ Sơ)",
+        "func": "// Lấy từ query URL: /api/profile/me?maTaiKhoan=1&maPhanQuyen=3\nconst { maTaiKhoan, maPhanQuyen } = msg.req.query;\n\nif (!maTaiKhoan || !maPhanQuyen) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Thiếu maTaiKhoan hoặc maPhanQuyen\" };\n    return msg;\n}\n\nlet query = \"\";\n\nif (maPhanQuyen == 2) { // Gia sư\n    query = `SELECT * FROM HoSoGiaSu WHERE MaTaiKhoan = ?`;\n} else if (maPhanQuyen == 3) { // Học viên\n    query = `SELECT * FROM HoSoHocVien WHERE MaTaiKhoan = ?`;\n} else {\n    msg.statusCode = 403;\n    msg.payload = { success: false, message: \"Admin không có hồ sơ\" };\n    return msg;\n}\n\nmsg.topic = query;\nmsg.payload = [maTaiKhoan];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 780,
+        "wires": [
+            [
+                "o5p6q7r8.s9t0u1"
+            ]
+        ]
+    },
+    {
+        "id": "o5p6q7r8.s9t0u1",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "Run DB Query",
+        "x": 780,
+        "y": 780,
+        "wires": [
+            [
+                "p6q7r8s9.t0u1v2"
+            ]
+        ]
+    },
+    {
+        "id": "p6q7r8s9.t0u1v2",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Success Response",
+        "func": "if (!msg.payload || msg.payload.length === 0) {\n    msg.statusCode = 404;\n    msg.payload = { success: false, message: \"Không tìm thấy hồ sơ\" };\n    return msg;\n}\n\nmsg.payload = {\n    \"success\": true,\n    \"profile\": msg.payload[0] // Trả về 1 object\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1000,
+        "y": 780,
+        "wires": [
+            [
+                "n4o5p6q7.r8s9t0"
+            ]
+        ]
+    },
+    {
+        "id": "q7r8s9t0.u1v2w3",
+        "type": "catch",
+        "z": "b78b6711.231928",
+        "name": "Catch DB Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 770,
+        "y": 900,
+        "wires": [
+            [
+                "r8s9t0u1.v2w3x4"
+            ]
+        ]
+    },
+    {
+        "id": "r8s9t0u1.v2w3x4",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Format SQL Error",
+        "func": "msg.statusCode = 500;\nmsg.payload = { \"success\": false, \"message\": msg.error.message, \"sql\": msg.topic };\ndelete msg.error;\ndelete msg.topic;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 930,
+        "y": 960,
+        "wires": [
+            [
+                "n4o5p6q7.r8s9t0"
+            ]
+        ]
+    },
+    {
+        "id": "http-in-monhoc",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "GET /api/monhoc",
+        "url": "/api/monhoc",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 300,
+        "y": 1000,
+        "wires": [
+            [
+                "func-sql-monhoc"
+            ]
+        ]
+    },
+    {
+        "id": "http-response-search",
+        "type": "http response",
+        "z": "b78b6711.231928",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 890,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "func-sql-monhoc",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "SQL: SELECT MonHoc",
+        "func": "msg.topic = \"SELECT MaMonHoc, TenMonHoc FROM MonHoc ORDER BY TenMonHoc\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 1000,
+        "wires": [
+            [
+                "mysql-db-search"
+            ]
+        ]
+    },
+    {
+        "id": "mysql-db-search",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "MariaDB",
+        "x": 700,
+        "y": 1120,
+        "wires": [
+            [
+                "func-return-data"
+            ]
+        ]
+    },
+    {
+        "id": "func-return-data",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Return Data",
+        "func": "msg.payload = {\n    success: true,\n    data: msg.payload\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 1060,
+        "wires": [
+            [
+                "http-response-search"
+            ]
+        ]
+    },
+    {
+        "id": "catch-db-search",
+        "type": "catch",
+        "z": "b78b6711.231928",
+        "name": "Catch DB Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 680,
+        "y": 1200,
+        "wires": [
+            [
+                "func-format-error"
+            ]
+        ]
+    },
+    {
+        "id": "func-format-error",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Format SQL Error",
+        "func": "msg.statusCode = 500;\nmsg.payload = { \"success\": false, \"message\": msg.error.message };\ndelete msg.error;\ndelete msg.topic;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 1200,
+        "wires": [
+            [
+                "http-response-search"
+            ]
+        ]
+    },
+    {
+        "id": "http-in-caphoc",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "GET /api/caphoc",
+        "url": "/api/caphoc",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 300,
+        "y": 1060,
+        "wires": [
+            [
+                "func-sql-caphoc"
+            ]
+        ]
+    },
+    {
+        "id": "func-sql-caphoc",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "SQL: SELECT CapHoc",
+        "func": "msg.topic = \"SELECT MaCapHoc, TenCapHoc FROM CapHoc ORDER BY TenCapHoc\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 1060,
+        "wires": [
+            [
+                "mysql-db-search"
+            ]
+        ]
+    },
+    {
+        "id": "http-in-quanhuyen",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "GET /api/quanhuyen",
+        "url": "/api/quanhuyen",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 310,
+        "y": 1120,
+        "wires": [
+            [
+                "func-sql-quanhuyen"
+            ]
+        ]
+    },
+    {
+        "id": "func-sql-quanhuyen",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "SQL: SELECT QuanHuyen",
+        "func": "msg.topic = \"SELECT MaQuanHuyen, TenQuanHuyen FROM QuanHuyen ORDER BY TenQuanHuyen\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
+        "y": 1120,
+        "wires": [
+            [
+                "mysql-db-search"
+            ]
+        ]
+    },
+    {
+        "id": "b9dcc06b24b75aab",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "POST /api/lophoc/:id/danhgia",
+        "url": "/api/lophoc/:id/danhgia",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 2220,
+        "y": 400,
+        "wires": [
+            [
+                "22b5845e3e1ad4b9"
+            ]
+        ]
+    },
+    {
+        "id": "2498185d05909117",
+        "type": "http response",
+        "z": "b78b6711.231928",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 3480,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "22b5845e3e1ad4b9",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "1. Kiểm tra (Đánh giá)",
+        "func": "const maLopHoc = msg.req.params.id;\nconst { maTaiKhoanHocVien, diem, nhanXet } = msg.payload;\n\nif (!maTaiKhoanHocVien || !diem) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Thiếu maTaiKhoanHocVien hoặc điểm\" };\n    return [null, msg]; // Output 2\n}\n\n// Lưu lại thông tin đánh giá\nmsg.reviewData = { maLopHoc, maTaiKhoanHocVien, diem, nhanXet };\n\n// 1. Kiểm tra xem người này có phải HỌC VIÊN của lớp này KHÔNG\n// 2. Kiểm tra lớp này đã 'hoan_thanh' CHƯA\n// 3. Lấy MaGiaSu và MaTaiKhoan của Gia Sư (người bị đánh giá)\nmsg.topic = `\n    SELECT \n        lh.MaGiaSu,\n        gs.MaTaiKhoan AS MaTaiKhoanGiaSu\n    FROM LopHoc lh\n    JOIN HoSoHocVien hv ON lh.MaHocVien = hv.MaHocVien\n    JOIN HoSoGiaSu gs ON lh.MaGiaSu = gs.MaGiaSu\n    WHERE \n        lh.MaLopHoc = ? \n        AND hv.MaTaiKhoan = ? \n        AND lh.TrangThai = 'hoan_thanh'\n`;\nmsg.payload = [maLopHoc, maTaiKhoanHocVien];\n\nreturn [msg, null]; // Output 1",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2490,
+        "y": 400,
+        "wires": [
+            [
+                "371e48f2d70a2667"
+            ],
+            [
+                "2498185d05909117"
+            ]
+        ]
+    },
+    {
+        "id": "371e48f2d70a2667",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "DB Check (Đánh giá)",
+        "x": 2720,
+        "y": 400,
+        "wires": [
+            [
+                "cfbf3815649e6f8b"
+            ]
+        ]
+    },
+    {
+        "id": "cfbf3815649e6f8b",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "2. Build SQL (INSERT DanhGia)",
+        "func": "// Kết quả từ bước 1 (Kiểm tra)\nif (!msg.payload || msg.payload.length === 0) {\n    msg.statusCode = 403; // Forbidden\n    msg.payload = { success: false, message: \"Không thể đánh giá lớp này (Chưa hoàn thành, không đúng học viên, hoặc đã đánh giá)\" };\n    return [null, msg]; // Output 2\n}\n\nconst maTaiKhoanGiaSu = msg.payload[0].MaTaiKhoanGiaSu;\nconst { maLopHoc, maTaiKhoanHocVien, diem, nhanXet } = msg.reviewData;\n\nmsg.topic = `\n    INSERT INTO DanhGia \n    (MaLopHoc, MaNguoiDanhGia, MaNguoiBiDanhGia, Diem, NhanXet)\n    VALUES (?, ?, ?, ?, ?)\n`;\nmsg.payload = [maLopHoc, maTaiKhoanHocVien, maTaiKhoanGiaSu, diem, nhanXet || null];\n\nreturn [msg, null]; // Output 1",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3010,
+        "y": 400,
+        "wires": [
+            [
+                "e07faa41c41a3c42"
+            ],
+            [
+                "2498185d05909117"
+            ]
+        ]
+    },
+    {
+        "id": "6e29d8256d145d14",
+        "type": "catch",
+        "z": "b78b6711.231928",
+        "name": "Catch DB Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 3010,
+        "y": 760,
+        "wires": [
+            [
+                "8d2fdb1fab494b72"
+            ]
+        ]
+    },
+    {
+        "id": "8d2fdb1fab494b72",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Format SQL Error",
+        "func": "msg.statusCode = 500;\nif (msg.error.code === 'ER_DUP_ENTRY') {\n    msg.statusCode = 409; // Conflict\n    msg.payload = { \"success\": false, \"message\": \"Lớp này đã được đánh giá rồi\" };\n} else {\n    msg.payload = { \"success\": false, \"message\": msg.error.message, \"sql\": msg.topic };\n}\ndelete msg.error;\ndelete msg.topic;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3230,
+        "y": 760,
+        "wires": [
+            [
+                "2498185d05909117"
+            ]
+        ]
+    },
+    {
+        "id": "8d0346c118e3a5c8",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "POST /api/lophoc/:id/thanhtoan",
+        "url": "/api/lophoc/:id/thanhtoan",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 2220,
+        "y": 660,
+        "wires": [
+            [
+                "9adb39a0e27ef410"
+            ]
+        ]
+    },
+    {
+        "id": "9adb39a0e27ef410",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "1. Lấy thông tin (Giao dịch)",
+        "func": "const maLopHoc = msg.req.params.id;\nconst { maTaiKhoanNguoiTra, soTien, phuongThuc } = msg.payload;\n\nif (!maTaiKhoanNguoiTra || !soTien || !phuongThuc) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Thiếu thông tin giao dịch\" };\n    return [null, msg]; // Output 2\n}\n\nmsg.txData = { maLopHoc, maTaiKhoanNguoiTra, soTien, phuongThuc };\n\n// Lấy MaTaiKhoan của người nhận (Gia Sư)\nmsg.topic = `\n    SELECT gs.MaTaiKhoan AS MaTaiKhoanNguoiNhan\n    FROM LopHoc lh\n    JOIN HoSoGiaSu gs ON lh.MaGiaSu = gs.MaGiaSu\n    WHERE lh.MaLopHoc = ?\n`;\nmsg.payload = [maLopHoc];\n\nreturn [msg, null]; // Output 1",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2510,
+        "y": 660,
+        "wires": [
+            [
+                "32b4c6c2d49c9e66"
+            ],
+            [
+                "2498185d05909117"
+            ]
+        ]
+    },
+    {
+        "id": "1ddc7053c0b2b662",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "2. Build SQL (INSERT GiaoDich)",
+        "func": "// Kết quả từ bước 1 (Lấy TT Giao dịch)\nif (!msg.payload || msg.payload.length === 0) {\n    msg.statusCode = 404;\n    msg.payload = { success: false, message: \"Không tìm thấy lớp học hoặc gia sư\" };\n    return [null, msg]; // Output 2\n}\n\nconst maTaiKhoanNguoiNhan = msg.payload[0].MaTaiKhoanNguoiNhan;\nconst { maLopHoc, maTaiKhoanNguoiTra, soTien, phuongThuc } = msg.txData;\n\nmsg.topic = `\n    INSERT INTO GiaoDich\n    (MaLopHoc, MaNguoiTra, MaNguoiNhan, SoTien, PhuongThuc, TrangThai)\n    VALUES (?, ?, ?, ?, ?, 'thanh_cong')\n`;\nmsg.payload = [maLopHoc, maTaiKhoanNguoiTra, maTaiKhoanNguoiNhan, soTien, phuongThuc];\n\nreturn [msg, null]; // Output 1",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3020,
+        "y": 660,
+        "wires": [
+            [
+                "944e9aef568a7f32"
+            ],
+            [
+                "2498185d05909117"
+            ]
+        ]
+    },
+    {
+        "id": "e07faa41c41a3c42",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "DB Insert (Đánh giá)",
+        "x": 3250,
+        "y": 400,
+        "wires": [
+            [
+                "f1ac085df8727cb4"
+            ]
+        ]
+    },
+    {
+        "id": "f1ac085df8727cb4",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Success (Đánh giá)",
+        "func": "msg.payload = { success: true, message: \"Gửi đánh giá thành công!\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3460,
+        "y": 400,
+        "wires": [
+            [
+                "2498185d05909117"
+            ]
+        ]
+    },
+    {
+        "id": "32b4c6c2d49c9e66",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "DB Check (Thanh toán)",
+        "x": 2730,
+        "y": 660,
+        "wires": [
+            [
+                "1ddc7053c0b2b662"
+            ]
+        ]
+    },
+    {
+        "id": "944e9aef568a7f32",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "DB Insert (Thanh toán)",
+        "x": 3250,
+        "y": 660,
+        "wires": [
+            [
+                "243f8ccb7dc89fc0"
+            ]
+        ]
+    },
+    {
+        "id": "243f8ccb7dc89fc0",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Success (Thanh toán)",
+        "func": "msg.payload = { success: true, message: \"Thanh toán thành công!\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3470,
+        "y": 660,
+        "wires": [
+            [
+                "2498185d05909117"
+            ]
+        ]
+    },
+    {
+        "id": "1f6fb6df8876756f",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "GET /api/all-tutors",
+        "url": "/api/all-tutors",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1730,
+        "y": 740,
+        "wires": [
+            [
+                "cce7892405dd5c0a"
+            ]
+        ]
+    },
+    {
+        "id": "cce7892405dd5c0a",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Tạo 2 truy vấn (GiaSư & LịchRảnh)",
+        "func": "const groupId = msg._msgid;\nconst totalParts = 2;\n\n// Clone 1: Lấy Gia Sư (đã duyệt)\nlet msg1 = RED.util.cloneMessage(msg);\n// === SỬA LỖI: Dùng LEFT JOIN để lấy cả gia sư chưa có lịch ===\nmsg1.topic = `\n    SELECT \n        gs.MaGiaSu, gs.HoTen, gs.GioiThieu, gs.TrinhDo,\n        AVG(dg.Diem) as DiemTrungBinh,\n        COUNT(DISTINCT dg.MaDanhGia) as SoDanhGia\n    FROM HoSoGiaSu gs\n    LEFT JOIN LopHoc lh ON gs.MaGiaSu = lh.MaGiaSu\n    LEFT JOIN DanhGia dg ON lh.MaLopHoc = dg.MaLopHoc\n    WHERE gs.DaDuyet = 1\n    GROUP BY gs.MaGiaSu\n`;\nmsg1.payload = [];\nmsg1.parts = { id: groupId, index: 0, count: totalParts };\n\n// Clone 2: Lấy TẤT CẢ Lịch Rảnh\nlet msg2 = RED.util.cloneMessage(msg);\nmsg2.topic = \"SELECT MaGiaSu, NgayTrongTuan, GioBatDau, GioKetThuc FROM GiaSu_LichRanh\";\nmsg2.payload = [];\nmsg2.parts = { id: groupId, index: 1, count: totalParts };\n\nreturn [ [msg1, msg2], null ];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2010,
+        "y": 740,
+        "wires": [
+            [
+                "aeb358dbf9d818f3"
+            ],
+            [
+                "d597561bbfdc144e"
+            ]
+        ]
+    },
+    {
+        "id": "aeb358dbf9d818f3",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "MariaDB",
+        "x": 2240,
+        "y": 820,
+        "wires": [
+            [
+                "b1c005dd95b94b76"
+            ]
+        ]
+    },
+    {
+        "id": "b1c005dd95b94b76",
+        "type": "join",
+        "z": "b78b6711.231928",
+        "name": "Chờ 2 truy vấn",
+        "mode": "auto",
+        "build": "array",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "5",
+        "count": "2",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 2430,
+        "y": 820,
+        "wires": [
+            [
+                "41be000037c5248b"
+            ]
+        ]
+    },
+    {
+        "id": "41be000037c5248b",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Gộp Lịch vào Gia Sư",
+        "func": "// msg.payload là mảng chứa 2 kết quả\nconst tutors = msg.payload[0];\nconst allSchedules = msg.payload[1];\n\n// Gộp lịch vào cho từng gia sư\nfor (const tutor of tutors) {\n    // Lọc ra các lịch rảnh của gia sư này\n    tutor.lichRanh = allSchedules.filter(s => s.MaGiaSu === tutor.MaGiaSu);\n}\n\nmsg.payload = {\n    success: true,\n    results: tutors\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2630,
+        "y": 820,
+        "wires": [
+            [
+                "d597561bbfdc144e"
+            ]
+        ]
+    },
+    {
+        "id": "d597561bbfdc144e",
+        "type": "http response",
+        "z": "b78b6711.231928",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 2650,
+        "y": 900,
+        "wires": []
+    },
+    {
+        "id": "7dcd9b3882684adb",
+        "type": "catch",
+        "z": "b78b6711.231928",
+        "name": "Catch DB Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 2220,
+        "y": 900,
+        "wires": [
+            [
+                "1f6d03ac9cc5426f"
+            ]
+        ]
+    },
+    {
+        "id": "1f6d03ac9cc5426f",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Format SQL Error",
+        "func": "msg.statusCode = 500;\nmsg.payload = { \"success\": false, \"message\": msg.error.message };\ndelete msg.error;\ndelete msg.topic;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2420,
+        "y": 900,
+        "wires": [
+            [
+                "d597561bbfdc144e"
+            ]
+        ]
+    },
+    {
+        "id": "http-in-add-subject",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "POST /api/profile/me/subject",
+        "url": "/api/profile/me/subject",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1840,
+        "y": 960,
+        "wires": [
+            [
+                "func-sql-add-subject"
+            ]
+        ]
+    },
+    {
+        "id": "http-response-tutor",
+        "type": "http response",
+        "z": "b78b6711.231928",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 2470,
+        "y": 1060,
+        "wires": []
+    },
+    {
+        "id": "func-sql-add-subject",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "SQL: INSERT GiaSu_MonHoc",
+        "func": "const { maTaiKhoanGiaSu, maMonHoc, maCapHoc, hocPhi } = msg.payload;\n\nif (!maTaiKhoanGiaSu || !maMonHoc || !maCapHoc || !hocPhi) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Thiếu thông tin\" };\n    return msg;\n}\n\nmsg.topic = `\n    INSERT INTO GiaSu_MonHoc_CapHoc (MaGiaSu, MaMonHoc, MaCapHoc, HocPhi)\n    VALUES ((SELECT MaGiaSu FROM HoSoGiaSu WHERE MaTaiKhoan = ?), ?, ?, ?)\n`;\nmsg.payload = [maTaiKhoanGiaSu, maMonHoc, maCapHoc, hocPhi];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2110,
+        "y": 960,
+        "wires": [
+            [
+                "mysql-db-tutor"
+            ]
+        ]
+    },
+    {
+        "id": "mysql-db-tutor",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "MariaDB",
+        "x": 2280,
+        "y": 1060,
+        "wires": [
+            [
+                "func-return-tutor"
+            ]
+        ]
+    },
+    {
+        "id": "func-return-tutor",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Return Success",
+        "func": "msg.payload = {\n    success: true,\n    data: msg.payload\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2470,
+        "y": 1000,
+        "wires": [
+            [
+                "http-response-tutor"
+            ]
+        ]
+    },
+    {
+        "id": "catch-db-tutor",
+        "type": "catch",
+        "z": "b78b6711.231928",
+        "name": "Catch DB Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 2260,
+        "y": 1140,
+        "wires": [
+            [
+                "func-format-error-tutor"
+            ]
+        ]
+    },
+    {
+        "id": "func-format-error-tutor",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Format SQL Error",
+        "func": "msg.statusCode = 500;\nif (msg.error.code === 'ER_DUP_ENTRY') {\n    msg.statusCode = 409;\n    msg.payload = { \"success\": false, \"message\": \"Bạn đã đăng ký môn này rồi\" };\n} else {\n    msg.payload = { \"success\": false, \"message\": msg.error.message, \"sql\": msg.topic };\n}\ndelete msg.error;\ndelete msg.topic;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2460,
+        "y": 1140,
+        "wires": [
+            [
+                "http-response-tutor"
+            ]
+        ]
+    },
+    {
+        "id": "http-in-add-schedule",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "POST /api/profile/me/schedule",
+        "url": "/api/profile/me/schedule",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1840,
+        "y": 1020,
+        "wires": [
+            [
+                "func-sql-add-schedule"
+            ]
+        ]
+    },
+    {
+        "id": "func-sql-add-schedule",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "SQL: INSERT GiaSu_LichRanh",
+        "func": "const { maTaiKhoanGiaSu, ngayTrongTuan, gioBatDau, gioKetThuc } = msg.payload;\n\nif (!maTaiKhoanGiaSu || !ngayTrongTuan || !gioBatDau || !gioKetThuc) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Thiếu thông tin\" };\n    return msg;\n}\n\nmsg.topic = `\n    INSERT INTO GiaSu_LichRanh (MaGiaSu, NgayTrongTuan, GioBatDau, GioKetThuc)\n    VALUES ((SELECT MaGiaSu FROM HoSoGiaSu WHERE MaTaiKhoan = ?), ?, ?, ?)\n`;\nmsg.payload = [maTaiKhoanGiaSu, ngayTrongTuan, gioBatDau, gioKetThuc];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2110,
+        "y": 1020,
+        "wires": [
+            [
+                "mysql-db-tutor"
+            ]
+        ]
+    },
+    {
+        "id": "b1c2d3e4.f5a6b7",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "POST /api/register",
+        "url": "/api/register",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1570,
+        "y": 1280,
+        "wires": [
+            [
+                "c2d3e4f5.a6b7c8"
+            ]
+        ]
+    },
+    {
+        "id": "d3e4f5a6.b7c8d9",
+        "type": "http response",
+        "z": "b78b6711.231928",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 2740,
+        "y": 1360,
+        "wires": []
+    },
+    {
+        "id": "c2d3e4f5.a6b7c8",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "1. Check Input",
+        "func": "const { email, password, maPhanQuyen, hoTen, soDienThoai } = msg.payload;\n\nif (!email || !password || !maPhanQuyen || !hoTen || !soDienThoai) {\n    msg.statusCode = 400;\n    msg.payload = { \"success\": false, \"message\": \"Thiếu thông tin bắt buộc (email, password, maPhanQuyen, hoTen, soDienThoai)\" };\n    return [null, msg]; // Gửi tới chân (output) thứ 2 (Lỗi)\n}\n\n// Lưu dữ liệu gốc để dùng ở bước 2\nmsg.registrationData = msg.payload;\nreturn [msg, null]; // Gửi tới chân (output) thứ 1 (Tiếp tục)",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1760,
+        "y": 1280,
+        "wires": [
+            [
+                "f5a6b7c8.d9e0f1"
+            ],
+            [
+                "d3e4f5a6.b7c8d9"
+            ]
+        ]
+    },
+    {
+        "id": "f5a6b7c8.d9e0f1",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "2. Build SQL (INSERT TaiKhoan)",
+        "func": "// Bỏ qua Bcrypt. Lấy mật khẩu plain text\nconst { email, maPhanQuyen, password } = msg.registrationData;\n\nmsg.topic = \"INSERT INTO TaiKhoan (Email, MatKhau, MaPhanQuyen) VALUES (?, ?, ?)\";\nmsg.payload = [email, password, maPhanQuyen]; // Lưu mật khẩu thẳng\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1990,
+        "y": 1280,
+        "wires": [
+            [
+                "a6b7c8d9.e0f1a2"
+            ]
+        ]
+    },
+    {
+        "id": "a6b7c8d9.e0f1a2",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "3. Run INSERT TaiKhoan",
+        "x": 2240,
+        "y": 1280,
+        "wires": [
+            [
+                "b7c8d9e0.f1a2b3"
+            ]
+        ]
+    },
+    {
+        "id": "b7c8d9e0.f1a2b3",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "4. Build SQL (INSERT HoSo)",
+        "func": "// Lấy MaTaiKhoan vừa tạo\nconst newTaiKhoanId = msg.payload.insertId;\nconst { hoTen, soDienThoai, diaChi, maPhanQuyen } = msg.registrationData;\n\n// Mặc định là HocVien (ID=3)\nlet tableName = \"HoSoHocVien\";\n\n// Nếu là GiaSu (ID=2)\nif (maPhanQuyen == 2) {\n    tableName = \"HoSoGiaSu\";\n}\n// Bạn có thể thêm 'else if (maPhanQuyen == 1)' cho Admin\n\nmsg.topic = `INSERT INTO ${tableName} (MaTaiKhoan, HoTen, SoDienThoai, DiaChi) VALUES (?, ?, ?, ?)`;\nmsg.payload = [newTaiKhoanId, hoTen, soDienThoai, diaChi || null]; // diaChi có thể null\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2190,
+        "y": 1440,
+        "wires": [
+            [
+                "c8d9e0f1.a2b3c4"
+            ]
+        ]
+    },
+    {
+        "id": "c8d9e0f1.a2b3c4",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "5. Run INSERT HoSo",
+        "x": 2420,
+        "y": 1440,
+        "wires": [
+            [
+                "d9e0f1a2.b3c4d5"
+            ]
+        ]
+    },
+    {
+        "id": "d9e0f1a2.b3c4d5",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "6. Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { \"success\": true, \"message\": \"Đăng ký thành công!\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2590,
+        "y": 1440,
+        "wires": [
+            [
+                "d3e4f5a6.b7c8d9"
+            ]
+        ]
+    },
+    {
+        "id": "e0f1a2b3.c4d5e6",
+        "type": "catch",
+        "z": "b78b6711.231928",
+        "name": "Catch DB Errors",
+        "scope": [
+            "a6b7c8d9.e0f1a2",
+            "c8d9e0f1.a2b3c4"
+        ],
+        "uncaught": false,
+        "x": 2410,
+        "y": 1540,
+        "wires": [
+            [
+                "f1a2b3c4.d5e6f7"
+            ]
+        ]
+    },
+    {
+        "id": "f1a2b3c4.d5e6f7",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Format SQL Error",
+        "func": "msg.statusCode = 500;\nif (msg.error.code === 'ER_DUP_ENTRY') {\n    msg.statusCode = 409; // Conflict\n    msg.payload = { \"success\": false, \"message\": \"Email đã tồn tại\" };\n} else {\n    msg.payload = { \"success\": false, \"message\": msg.error.message };\n}\ndelete msg.error;\ndelete msg.topic;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2620,
+        "y": 1540,
+        "wires": [
+            [
+                "d3e4f5a6.b7c8d9"
+            ]
+        ]
+    },
+    {
+        "id": "h2i3j4k5.l6m7n8",
+        "type": "http in",
+        "z": "b78b6711.231928",
+        "name": "POST /api/login",
+        "url": "/api/login",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1650,
+        "y": 1640,
+        "wires": [
+            [
+                "i3j4k5l6.m7n8o9"
+            ]
+        ]
+    },
+    {
+        "id": "j4k5l6m7.n8o9p0",
+        "type": "http response",
+        "z": "b78b6711.231928",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 2550,
+        "y": 1760,
+        "wires": []
+    },
+    {
+        "id": "i3j4k5l6.m7n8o9",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Build SQL SELECT",
+        "func": "const { email, password } = msg.payload;\n\nif (!email || !password) {\n    msg.statusCode = 400;\n    msg.payload = { \"success\": false, \"message\": \"Thiếu email hoặc password\" };\n    return [null, msg]; // Output 2\n}\n\nmsg.topic = \"SELECT MaTaiKhoan, Email, MatKhau, MaPhanQuyen FROM TaiKhoan WHERE Email = ? AND TrangThai = 1\";\nmsg.payload = [email];\nmsg.passwordToCompare = password; // Mật khẩu user gõ vào\n\nreturn [msg, null]; // Output 1",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1880,
+        "y": 1640,
+        "wires": [
+            [
+                "k5l6m7n8.o9p0q1"
+            ],
+            [
+                "j4k5l6m7.n8o9p0"
+            ]
+        ]
+    },
+    {
+        "id": "k5l6m7n8.o9p0q1",
+        "type": "mysql",
+        "z": "b78b6711.231928",
+        "mydb": "8597ba414bc07d7c",
+        "name": "MariaDB",
+        "x": 2060,
+        "y": 1740,
+        "wires": [
+            [
+                "l6m7n8o9.p0q1r2"
+            ]
+        ]
+    },
+    {
+        "id": "l6m7n8o9.p0q1r2",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Check user & So sánh mật khẩu",
+        "func": "if (!msg.payload || msg.payload.length === 0) {\n    msg.statusCode = 404;\n    msg.payload = { \"success\": false, \"message\": \"Email không tồn tại hoặc tài khoản bị khóa\" };\n    return [null, msg]; // Output 2\n}\n\nconst user = msg.payload[0];\nconst passwordFromDB = user.MatKhau;\nconst passwordFromUser = msg.passwordToCompare;\n\n// So sánh mật khẩu plain text\nif (passwordFromDB !== passwordFromUser) {\n    msg.statusCode = 401;\n    msg.payload = { \"success\": false, \"message\": \"Sai mật khẩu\" };\n    return [null, msg]; // Output 2\n}\n\n// Mật khẩu đúng, gán user để gửi về\nmsg.user = user;\nreturn [msg, null]; // Output 1",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2340,
+        "y": 1640,
+        "wires": [
+            [
+                "r2s3t4u5.v6w7x8"
+            ],
+            [
+                "j4k5l6m7.n8o9p0"
+            ]
+        ]
+    },
+    {
+        "id": "r2s3t4u5.v6w7x8",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Login Success Response",
+        "func": "// Xóa mật khẩu khỏi thông tin user\ndelete msg.user.MatKhau;\n\nmsg.statusCode = 200;\nmsg.payload = {\n    \"success\": true,\n    \"message\": \"Đăng nhập thành công\",\n    \"user\": msg.user // Gửi thẳng thông tin user về\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2610,
+        "y": 1640,
+        "wires": [
+            [
+                "j4k5l6m7.n8o9p0"
+            ]
+        ]
+    },
+    {
+        "id": "x8y9z0a1.b2c3d4",
+        "type": "catch",
+        "z": "b78b6711.231928",
+        "name": "Catch DB Errors",
+        "scope": [
+            "k5l6m7n8.o9p0q1"
+        ],
+        "uncaught": false,
+        "x": 2040,
+        "y": 1840,
+        "wires": [
+            [
+                "y9z0a1b2.c3d4e5"
+            ]
+        ]
+    },
+    {
+        "id": "y9z0a1b2.c3d4e5",
+        "type": "function",
+        "z": "b78b6711.231928",
+        "name": "Format SQL Error",
+        "func": "msg.statusCode = 500;\nmsg.payload = { \"success\": false, \"message\": msg.error.message };\ndelete msg.error;\ndelete msg.topic;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2250,
+        "y": 1840,
+        "wires": [
+            [
+                "j4k5l6m7.n8o9p0"
+            ]
+        ]
+    },
+    {
+        "id": "350658ab85f8a88a",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-node-mysql": "2.0.0"
+        }
+    }
+]
